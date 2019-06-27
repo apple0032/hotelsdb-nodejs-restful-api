@@ -1,0 +1,30 @@
+{
+  "name": "hotelsdb-api",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "nodemon server.js",
+    "sequelize-skeleton": "./node_modules/sequelize-cli/lib/sequelize init:models; ./node_modules/sequelize-cli/lib/sequelize init:config",
+    "init-db": "cd /opt/lampp/bin/ && echo 'DROP DATABASE IF EXISTS api_node_demo; CREATE DATABASE api_node_demo CHARACTER SET utf8 COLLATE utf8_general_ci' | ./mysql -u root && cd -"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.18.3",
+    "express": "^4.16.3",
+    "express-validator": "^6.0.1",
+    "mysql2": "^1.5.3",
+    "node-datetime": "^2.1.2",
+    "sequelize": "^4.38.0"
+  },
+  "private": true,
+  "keywords": [],
+  "author": "Ken Ip, Hong Kong",
+  "license": "Ken",
+  "devDependencies": {
+    "faker": "^4.1.0",
+    "lodash.random": "^3.2.0",
+    "lodash.times": "^4.3.2",
+    "nodemon": "^1.19.1",
+    "sequelize-cli": "^4.0.0"
+  }
+}
