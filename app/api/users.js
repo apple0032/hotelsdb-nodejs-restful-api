@@ -122,7 +122,7 @@ module.exports = (app, db , current) => {
       
       var result = true;
       params.forEach(function(item, index, array){
-        if (typeof item == 'undefined'){
+        if (typeof item == 'undefined' || item == ''){
             result = false;
             return false;
         }
@@ -130,6 +130,6 @@ module.exports = (app, db , current) => {
         
       return result;
   }
-  
+
   
 };

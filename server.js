@@ -7,6 +7,7 @@ const db = require("./models");
 
 const apiUsers = require("./app/api/users");
 const apiHotel = require("./app/api/hotel");
+const apiAccount = require("./app/api/account");
 
 const app = express();
 //app.use(bodyParser.json());
@@ -32,13 +33,15 @@ app.all('/*', function(req, res, next) {
         //Find api_key inside users table 
         db.users.findOne({
                 where: {
-                  api_key: api_key
+                  api_key: api_key,
+                  role: 'superadmin'
                 }
         }).then( (result) => {
             console.log(result);
-            if(result != null){
+            if(result !== null){
                 apiUsers(app, db, current);
                 apiHotel(app, db, current);
+                apiAccount(app,db,current);
                 next();
             } else {
                res.json({ result: 'error', message: 'Invalid api_key.' });
