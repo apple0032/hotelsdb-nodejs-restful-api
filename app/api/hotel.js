@@ -75,8 +75,8 @@ module.exports = (app, db , current) => {
       comment: req.body.comment,
       star: req.body.star,
       status: req.body.status, 
-      created_at: current,
-      updated_at: current
+      created_at: current.create().format('Y-m-d H:M:S'),
+      updated_at: current.create().format('Y-m-d H:M:S')
     }).then( (result) => {
         res.json(result);
     }).catch(err => {

@@ -14,43 +14,74 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("app/public"));
 
-const dateTime = require('node-datetime');
-const dt = dateTime.create();
-const current = dt.format('Y-m-d H:M:S');
-
+const current = require('node-datetime');
+//const dt = dateTime.create();
+//const current = dateTime.create().format('Y-m-d H:M:S');
+//console.log(current.create().format('Y-m-d H:M:S'));
 
 //API authentication before all request
 app.all('/*', function(req, res, next) {
     console.log('Intercepting requests ...');
     console.log('Running for API authentication......');
     
-    if((!(req.header('api_key')))){
-        res.json({ result: 'error', message: 'Missing api_key' });
-    } else {
-    
-        var api_key = req.header('api_key');
-            
-        //Find api_key inside users table 
-        db.users.findOne({
-                where: {
-                  api_key: api_key,
-                  role: 'superadmin'
-                }
-        }).then( (result) => {
-            console.log(result);
-            if(result !== null){
-                apiUsers(app, db, current);
-                apiHotel(app, db, current);
-                apiAccount(app,db,current);
-                next();
-            } else {
-               res.json({ result: 'error', message: 'Invalid api_key.' });
-            }
-        }).catch(err => {
-             console.log(err);
-        });
-    }
+    ApiKeyChecking(req, res, next);
 });
+
+function ApiKeyChecking(req, res, next){
+    
+    /* Validation algorithm
+     * - Only admin level api_key allow to access admin control api
+     * - For user control api, request any of one api_key in users table
+     * - Some of exceptional api path inside exception array should bypass the validation
+     */
+    var ApiRequest = req.originalUrl;
+    console.log(ApiRequest);
+    
+    var AdminResult = ApiRequest.includes("admin");
+    
+    var exception = [
+        '/account/login',
+    ];
+    var ExceptResult = exception.includes(ApiRequest);
+    
+    if(ExceptResult == false){
+        if((!(req.header('api_key')))){
+            res.json({ result: 'error', message: 'Missing api_key' });
+        } else {
+
+            var api_key = req.header('api_key');
+            var apiRequired = {api_key:api_key};
+            if(AdminResult == true){
+                apiRequired.role = 'superadmin';
+            }
+
+            //Find api_key inside users table 
+            db.users.findOne({
+                    where: apiRequired
+            }).then( (result) => {
+                console.log(result);
+                if(result !== null){
+                   initApi(next);
+                } else {
+                   res.json({ result: 'error', message: 'Invalid api_key.' });
+                }
+            }).catch(err => {
+                 console.log(err);
+            });
+            
+        }
+    } else {
+        initApi(next);
+    }
+}
+
+function initApi(next){
+    apiUsers(app, db, current);
+    apiHotel(app, db, current);
+    apiAccount(app,db,current);
+    next();
+}
+
 
 
 //Database table association & relationship
@@ -58,14 +89,20 @@ db.hotel_room.belongsTo(db.room_type,{foreignKey: 'room_type_id'});
 db.room_type.hasMany(db.hotel_room,{foreignKey: 'id'});
 
 
+
 //**** Dummy & testing area ****//
 
 //Password encryption algorithm same as laravel
 const bcrypt = require('bcryptjs');
 const hash = bcrypt.hashSync('123');
-console.log(hash);
-console.log(bcrypt.compareSync('123', hash)); 
+//console.log(hash);
+//console.log(bcrypt.compareSync('123', hash));
 
+//api_key hashing algorithm
+//console.log(Buffer.from(current).toString('base64'));
+
+
+//Node.js server listener
 
 //db.sequelize.sync().then(() => {
 //  app.listen(8080, () => console.log("App listening on port 8080!"));

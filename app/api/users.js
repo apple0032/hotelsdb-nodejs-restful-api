@@ -75,8 +75,8 @@ module.exports = (app, db , current) => {
           profile_image: req.body.profile_image,
           profile_banner: req.body.profile_banner,
           profile_desc: req.body.profile_desc,
-          created_at: current,
-          updated_at: current
+          created_at: current.create().format('Y-m-d H:M:S'),
+          updated_at: current.create().format('Y-m-d H:M:S')
         }).then( (result) => {
             res.json(result);
         }).catch(err => {
@@ -102,7 +102,7 @@ module.exports = (app, db , current) => {
       profile_image: req.body.profile_image,
       profile_banner: req.body.profile_banner,
       profile_desc: req.body.profile_desc,
-      updated_at: current
+      updated_at: current.create().format('Y-m-d H:M:S')
     },
     {
       where: {
