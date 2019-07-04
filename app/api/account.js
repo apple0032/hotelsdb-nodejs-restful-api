@@ -64,6 +64,90 @@ module.exports = (app, db , current) => {
             console.log(err);
        });
   });
+  
+  //Get user by user_id (user api)
+  app.get( "/account/:user_id", (req, res) => {
+       db.users.find( {
+           where: {id: req.params.user_id} , 
+             attributes: {
+                exclude: ['password','api_key']
+              }
+       }).then( (result) => {
+           if(result !== null){
+              res.json(result);
+           } else {
+              res.json({ result: 'error', message: 'No data found.' });
+           }
+       }).catch(err => {
+            console.log(err);
+       });
+    }
+  );
+  
+  
+   //Update user details
+  app.put( "/account/:user_id", (req, res) => {
+//      console.log(req.params.user_id);
+//      console.log(req.body);
+    var apiRequired = {
+      name: req.body.name,
+      email: req.body.email,
+      phone: req.body.phone,
+      gender: req.body.gender,
+      role: req.body.role,
+      profile_image: req.body.profile_image,
+      profile_banner: req.body.profile_banner,
+      profile_desc: req.body.profile_desc,
+      updated_at: current.create().format('Y-m-d H:M:S')
+    };
+    
+     if (typeof req.body.password !== 'undefined'){
+         apiRequired.password = bcrypt.hashSync(req.body.password);
+     }
+
+    db.users.update(apiRequired,
+    {
+      where: {
+        id: req.params.user_id
+      }
+    }).then( (result) => {
+       db.users.findById(req.params.user_id).then( (result) => {
+            res.json({ result: 'success', updated: result });
+       });
+    }).catch(err => {
+        console.log(err);
+    });
+  });
+  
+  
+  //Create new user
+  app.post( "/account/create", (req, res) => {
+    console.log(req.body);
+    var required_fields = [req.body.name, req.body.email, req.body.password];
+    var validator = ApiFieldsValidation(required_fields);
+    
+    if(validator === true){
+        db.users.create({
+          name: req.body.name,
+          email: req.body.email,
+          password: bcrypt.hashSync(req.body.password),
+          phone: req.body.phone,
+          gender: req.body.gender,
+          role: req.body.role,
+          profile_image: req.body.profile_image,
+          profile_banner: req.body.profile_banner,
+          profile_desc: req.body.profile_desc,
+          created_at: current.create().format('Y-m-d H:M:S'),
+          updated_at: current.create().format('Y-m-d H:M:S')
+        }).then( (result) => {
+            res.json({ result: 'success', created: result });
+        }).catch(err => {
+            console.log(err);
+        });
+    } else {
+         res.json({ result: 'error', message: 'Missing required parameters.' });
+    }
+  });
 
   
   function ApiFieldsValidation(params){

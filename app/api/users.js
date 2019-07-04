@@ -58,66 +58,6 @@ module.exports = (app, db , current) => {
   );
   
   
-  //Create new user
-  app.post( "/admin/users", (req, res) => {
-    console.log(req.body);
-    var required_fields = [req.body.name, req.body.email, req.body.password];
-    var validator = ApiFieldsValidation(required_fields);
-    
-    if(validator === true){
-        db.users.create({
-          name: req.body.name,
-          email: req.body.email,
-          password: bcrypt.hashSync(req.body.password),
-          phone: req.body.phone,
-          gender: req.body.gender,
-          role: req.body.role,
-          profile_image: req.body.profile_image,
-          profile_banner: req.body.profile_banner,
-          profile_desc: req.body.profile_desc,
-          created_at: current.create().format('Y-m-d H:M:S'),
-          updated_at: current.create().format('Y-m-d H:M:S')
-        }).then( (result) => {
-            res.json(result);
-        }).catch(err => {
-            console.log(err);
-        });
-    } else {
-         res.json({ result: 'error', message: 'Missing required parameters.' });
-    }
-  });
-  
-  
-  //Update user details
-  app.put( "/admin/users/:user_id", (req, res) => {
-//      console.log(req.params.user_id);
-//      console.log(req.body);
-    db.users.update({
-      name: req.body.name,
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password),
-      phone: req.body.phone,
-      gender: req.body.gender,
-      role: req.body.role,
-      profile_image: req.body.profile_image,
-      profile_banner: req.body.profile_banner,
-      profile_desc: req.body.profile_desc,
-      updated_at: current.create().format('Y-m-d H:M:S')
-    },
-    {
-      where: {
-        id: req.params.user_id
-      }
-    }).then( (result) => {
-       db.users.findById(req.params.user_id).then( (result) => {
-            res.json({ result: 'success', updated: result });
-       });
-    }).catch(err => {
-        console.log(err);
-    });
-  });
-  
-  
   function ApiFieldsValidation(params){
       
       var result = true;
