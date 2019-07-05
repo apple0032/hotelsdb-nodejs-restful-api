@@ -125,24 +125,36 @@ module.exports = (app, db , current) => {
     console.log(req.body);
     var required_fields = [req.body.name, req.body.email, req.body.password];
     var validator = ApiFieldsValidation(required_fields);
+    var duplicate = checkUniqueEmail(req.body.email,null);
+    console.log(duplicate);
     
     if(validator === true){
-        db.users.create({
-          name: req.body.name,
-          email: req.body.email,
-          password: bcrypt.hashSync(req.body.password),
-          phone: req.body.phone,
-          gender: req.body.gender,
-          role: req.body.role,
-          profile_image: req.body.profile_image,
-          profile_banner: req.body.profile_banner,
-          profile_desc: req.body.profile_desc,
-          created_at: current.create().format('Y-m-d H:M:S'),
-          updated_at: current.create().format('Y-m-d H:M:S')
+        db.users.find( {
+            where: {email: req.body.email} 
         }).then( (result) => {
-            res.json({ result: 'success', created: result });
+            if(result == null){
+                db.users.create({
+                  name: req.body.name,
+                  email: req.body.email,
+                  password: bcrypt.hashSync(req.body.password),
+                  phone: req.body.phone,
+                  gender: req.body.gender,
+                  role: req.body.role,
+                  profile_image: req.body.profile_image,
+                  profile_banner: req.body.profile_banner,
+                  profile_desc: req.body.profile_desc,
+                  created_at: current.create().format('Y-m-d H:M:S'),
+                  updated_at: current.create().format('Y-m-d H:M:S')
+                }).then( (result) => {
+                    res.json({ result: 'success', created: result });
+                }).catch(err => {
+                    console.log(err);
+                });
+            } else {
+                res.json({ result: 'error', message: 'Duplicate email address!' });
+            }
         }).catch(err => {
-            console.log(err);
+             console.log(err);
         });
     } else {
          res.json({ result: 'error', message: 'Missing required parameters.' });
@@ -161,6 +173,23 @@ module.exports = (app, db , current) => {
       });
         
       return result;
+  }
+  
+  function checkUniqueEmail(email,itself){
+    console.log(email);
+    
+    var duplicate = false;
+    db.users.find( {
+        where: {email: email} 
+    }).then( (result) => {
+        if(result !== null){
+           duplicate = true;
+        }
+    }).catch(err => {
+         console.log(err);
+    });
+    
+    return duplicate;
   }
   
   

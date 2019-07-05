@@ -69,19 +69,26 @@ module.exports = (app, db , current) => {
   
   //Create new hotel comment
   app.post( "/hotel/comment/:hotel_id", (req, res) => {
-    db.hotel_comment.create({
-      hotel_id: req.params.hotel_id,
-      user_id: req.body.user_id,
-      comment: req.body.comment,
-      star: req.body.star,
-      status: req.body.status, 
-      created_at: current.create().format('Y-m-d H:M:S'),
-      updated_at: current.create().format('Y-m-d H:M:S')
-    }).then( (result) => {
-        res.json(result);
-    }).catch(err => {
-        console.log(err);
-    });
+    var required_fields = [req.body.star, req.body.comment,req.body.user_id];
+    var validator = ApiFieldsValidation(required_fields);
+    
+    if(validator === true){
+        db.hotel_comment.create({
+          hotel_id: req.params.hotel_id,
+          user_id: req.body.user_id,
+          comment: req.body.comment,
+          star: req.body.star,
+          status: req.body.status, 
+          created_at: current.create().format('Y-m-d H:M:S'),
+          updated_at: current.create().format('Y-m-d H:M:S')
+        }).then( (result) => {
+            res.json(result);
+        }).catch(err => {
+            console.log(err);
+        });
+    } else {
+        res.json({ result: 'error', message: 'Missing required parameters.' });
+    }
   });
   
   
@@ -109,6 +116,17 @@ module.exports = (app, db , current) => {
     }
   );
   
+    function ApiFieldsValidation(params){
+      
+        var result = true;
+        params.forEach(function(item, index, array){
+          if (typeof item == 'undefined' || item == ''){
+              result = false;
+              return false;
+          }
+        });
 
+        return result;
+    }
   
 };

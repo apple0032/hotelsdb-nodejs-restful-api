@@ -108,3 +108,28 @@ const hash = bcrypt.hashSync('123');
 //  app.listen(8080, () => console.log("App listening on port 8080!"));
 //});
 app.listen(8080, () => console.log("App listening on port 8080!"));
+
+
+//API specification
+/*
+ * *The user-control & data access will be first priority for hotelsdb nodejs api
+ * *because the mobile version of hotelsdb will be coming soon.
+ *  
+ * # User
+ *  - [POST] account/login
+ *  - [PUT]  account/api-key/{userid} *generate new api-key
+ *  - [GET]  account/{userid}
+ *  - [PUT]  account/{userid}
+ *  - [POST] account/create
+ * 
+ * # Hotel
+ *  - [GET] hotel/list
+ *  - [GET] hotel/{hotelid}
+ *  - [GET] hotel/comment/{hotelid}
+ *  - [POST] hotel/comment/{hotelid}
+ *  - [GET] hotel/room/{hotelid}
+ *  
+ *  
+ *  
+ * 
+ */
