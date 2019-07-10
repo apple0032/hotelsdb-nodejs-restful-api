@@ -4,6 +4,7 @@ const faker = require("faker");
 const times = require("lodash.times");
 const random = require("lodash.random");
 const db = require("./models");
+const request = require('request');
 
 const apiUsers = require("./app/api/users");
 const apiHotel = require("./app/api/hotel");
@@ -101,6 +102,47 @@ const hash = bcrypt.hashSync('123');
 //api_key hashing algorithm
 //console.log(Buffer.from(current).toString('base64'));
 
+//HTTP request / restful API Demo/example code
+app.get( "/rest-api", (req, res) => {
+
+    var q =  req.query.q;
+    var loc = req.query.loc;
+
+        request(
+          { method: 'GET',
+            uri: 'http://api.openweathermap.org/data/2.5/weather?q='+loc+'&appid='+q,
+            gzip: true
+          },
+        function (error, response, body) {
+            // body is the decompressed response body
+            //console.log('server encoded the data as: ' + (response.headers['content-encoding'] || 'identity'));
+            //console.log('the decoded data is: ' + body);
+            res.setHeader('Content-Type', 'application/json');
+            res.send(body);
+          }
+        )
+        .on('data', function(data) {
+          // decompressed data as it is received
+         // console.log('decoded chunk: ' + data);
+        })
+        .on('response', function(response) {
+          // unmodified http.IncomingMessage object
+          response.on('data', function(data) {
+            // compressed data as it is received
+            //console.log('received ' + data.length + ' bytes of compressed data');
+          });
+        });
+  }
+);
+
+app.get( "/async-test", async (req, res) => {
+    const util = require('util');
+    const requestPromise = util.promisify(request);
+    const response = await requestPromise('https://www.google.com');
+    console.log('response', response.body);
+  }
+);
+  
 
 //Node.js server listener
 
@@ -129,7 +171,9 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  *  - [POST] hotel/comment/{hotelid}
  *  - [GET] hotel/room/{hotelid}
  *  
- *  
+ *  # Searching
+ *  - [GET] /hotel/search/normal
+ *  - [GET] /hotel/search/advanced
  *  
  * 
  */
