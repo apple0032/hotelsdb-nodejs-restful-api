@@ -110,7 +110,7 @@ app.get( "/rest-api", (req, res) => {
 
         request(
           { method: 'GET',
-            uri: 'http://api.openweathermap.org/data/2.5/weather?q='+loc+'&appid='+q,
+            uri: 'http://api.openweathermap.org/data/2.5/weather?q='+loc+'&appid='+q+'&units=metric',
             gzip: true
           },
         function (error, response, body) {
@@ -132,9 +132,13 @@ app.get( "/rest-api", (req, res) => {
             //console.log('received ' + data.length + ' bytes of compressed data');
           });
         });
+        
+     //api.openweathermap.org/data/2.5/forecast?q=tokyo&units=metric&appid=; //forecast for 5 days
+     //https://www.weatherbit.io/api //other weather source
   }
 );
 
+//Test async/await function
 app.get( "/async-test", async (req, res) => {
     const util = require('util');
     const requestPromise = util.promisify(request);
@@ -154,26 +158,30 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
 
 //API specification
 /*
- * *The user-control & data access will be first priority for hotelsdb nodejs api
+ * *The user-control & data access will be first priority for hotelsdb restful api
  * *because the mobile version of hotelsdb will be coming soon.
  *  
  * # User
- *  - [POST] account/login
- *  - [PUT]  account/api-key/{userid} *generate new api-key
- *  - [GET]  account/{userid}
- *  - [PUT]  account/{userid}
- *  - [POST] account/create
+ *  - [POST] /account/login
+ *  - [PUT]  /account/api-key/{userid} *generate new api-key
+ *  - [GET]  /account/{userid}
+ *  - [PUT]  /account/{userid}
+ *  - [POST] /account/create
  * 
  * # Hotel
- *  - [GET] hotel/list
- *  - [GET] hotel/{hotelid}
- *  - [GET] hotel/comment/{hotelid}
- *  - [POST] hotel/comment/{hotelid}
- *  - [GET] hotel/room/{hotelid}
+ *  - [GET]  /hotel/list
+ *  - [GET]  /hotel/{hotelid}
+ *  - [GET]  /hotel/comment/{hotelid}
+ *  - [POST] /hotel/comment/{hotelid}
+ *  - [GET]  /hotel/room/{hotelid}
  *  
- *  # Searching
+ * # Searching - Hotel
  *  - [GET] /hotel/search/normal
  *  - [GET] /hotel/search/advanced
  *  
+ * # Booking - Hotel
+ *  - [GET] /hotel/booking/status?hotel=&date=   *check room status by hotel
+ *  - [GET] /hotel/booking/validation?hotelroom=&date=   *validate a hotel room by room_id
+ *  - [GET] /hotel/booking/{userid} *
  * 
  */
