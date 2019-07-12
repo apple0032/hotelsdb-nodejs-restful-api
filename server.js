@@ -180,8 +180,14 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  *  - [GET] /hotel/search/advanced
  *  
  * # Booking - Hotel
- *  - [GET] /hotel/booking/status?hotel=&date=   *check room status by hotel
- *  - [GET] /hotel/booking/validation?hotelroom=&date=   *validate a hotel room by room_id
- *  - [GET] /hotel/booking/{userid} *
+ *  - [GET]  /hotel/booking/status?hotel=&date=   *check room status by hotel
+ *  - [GET]  /hotel/booking/validation?hotelroom=&date=   *validate a hotel room by room_id
+ *  - [GET]  /hotel/booking/{userid} *get all hotel booking by userid
+ *  - [GET]  /hotel/booking/payment/{bookid}
+ *  - [GET]  /hotel/bookong/guest/{bookid}
+ *  - [POST] /hotel/booking/create
+ *  - [POST] /hotel/booking/payment/{bookid}
+ *  - [post]  /hotel/bookong/guest/{bookid}
+ *  
  * 
  */
