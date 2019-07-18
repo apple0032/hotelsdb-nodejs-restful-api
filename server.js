@@ -42,6 +42,7 @@ function ApiKeyChecking(req, res, next){
     
     var exception = [
         '/account/login',
+        '/hotel/search/normal'
     ];
     var ExceptResult = exception.includes(ApiRequest);
     
@@ -88,6 +89,9 @@ function initApi(next){
 //Database table association & relationship
 db.hotel_room.belongsTo(db.room_type,{foreignKey: 'room_type_id'});
 db.room_type.hasMany(db.hotel_room,{foreignKey: 'id'});
+
+db.hotel_room.belongsTo(db.hotel,{foreignKey: 'id'});
+db.hotel.hasMany(db.hotel_room,{foreignKey: 'hotel_id'});
 
 
 
@@ -161,7 +165,7 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  * *The user-control & data access will be first priority for hotelsdb restful api
  * *because the mobile version of hotelsdb will be coming soon.
  *  
- * # User
+ * # Account
  *  - [POST] /account/login
  *  - [PUT]  /account/api-key/{userid} *generate new api-key
  *  - [GET]  /account/{userid}
@@ -175,19 +179,34 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  *  - [POST] /hotel/comment/{hotelid}
  *  - [GET]  /hotel/room/{hotelid}
  *  
- * # Searching - Hotel
- *  - [GET] /hotel/search/normal
- *  - [GET] /hotel/search/advanced
+ * # Searching Hotel
+ *  - [POST] /hotel/search/normal
+ *  - [POST] /hotel/search/advanced
  *  
- * # Booking - Hotel
+ * # Booking Hotel
  *  - [GET]  /hotel/booking/status?hotel=&date=   *check room status by hotel
  *  - [GET]  /hotel/booking/validation?hotelroom=&date=   *validate a hotel room by room_id
  *  - [GET]  /hotel/booking/{userid} *get all hotel booking by userid
- *  - [GET]  /hotel/booking/payment/{bookid}
- *  - [GET]  /hotel/bookong/guest/{bookid}
+ *  - [GET]  /hotel/booking/details/{bookid}
  *  - [POST] /hotel/booking/create
  *  - [POST] /hotel/booking/payment/{bookid}
- *  - [post]  /hotel/bookong/guest/{bookid}
+ *  - [post] /hotel/bookong/guest/{bookid}
+ * 
+ * # Searching Flight
+ *  - [GET] /flight/searchcounty/{text}  *search country
+ *  - [GET] /flight/searchairport/{countrycode} *seach citycode
+ *  - [GET] /flight/getairportlist/{citycode} *search airports
+ *  - [GET] /flight/result?country=&code=&city=&from=&to=&start=&to= *search all flights
  *  
+ * # Booking Flight
+ *  - [POST] /flight/booking
+ *  - [GET]  /flight/booking/{userid}
+ *  - [GET]  /flight/booking/details/{bookingid}
+ *  - [POST] /flight/booking/seat/{userid}
+ *  - [GET]  /flight/booking/seat/q?bookid=&date=&time=
+ *  
+ * # Trip management
+ *  
+ * 
  * 
  */

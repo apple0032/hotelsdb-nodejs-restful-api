@@ -1,3 +1,5 @@
+var Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 
 module.exports = (app, db , current) => {
   
@@ -115,6 +117,65 @@ module.exports = (app, db , current) => {
         });
     }
   );
+  
+  //Searching hotel by postdata
+  app.post( "/hotel/search/normal", (req, res) => {
+      
+    console.log('SEARCHING.......');
+    offset = parseInt(req.body.offset);
+    limit = parseInt(req.body.limit);
+    if(isNaN(offset)){ offset = 0; }
+    if(isNaN(limit)){ limit = 100; }
+    
+    const criteria = {
+        offset:offset,
+        limit:limit
+    };
+    
+    const query = {};
+    
+    if(typeof req.body.name !== 'undefined'){
+        query.name = {
+            [Op.like]: '%'+req.body.name+'%'
+        };
+    }
+    
+    if(typeof req.body.category_id !== 'undefined'){
+        query.category_id = {
+            [Op.eq]: req.body.category_id
+        };
+    }
+    
+    if(typeof req.body.star !== 'undefined'){
+        query.star = {
+            [Op.eq]: req.body.star
+        };
+    }
+    
+
+    
+    criteria.where = query;
+    criteria.include = [db.hotel_room];
+    console.log(criteria);
+    
+    db.hotel.findAll(criteria).then(result => {
+       if(result !== null){
+          res.json({
+            result: 'success' , 
+            total: result.length , 
+            offset: offset,
+            limit: limit,
+            data: result 
+          });
+       } else {
+          res.json({ result: 'error', message: 'No data found.' });
+       }
+    }).catch(err => {
+        console.log(err);
+    });
+        
+  });
+  
   
     function ApiFieldsValidation(params){
       
