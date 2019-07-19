@@ -133,6 +133,9 @@ module.exports = (app, db , current) => {
     };
     
     const query = {};
+    query.soft_delete = {
+        [Op.eq]: '0'
+    };
     
     if(typeof req.body.name !== 'undefined'){
         query.name = {
@@ -152,12 +155,36 @@ module.exports = (app, db , current) => {
         };
     }
     
+    /**** Include joining hotel room table ****/
+        criteria.where = query;
 
+        const include = {model: db.hotel_room}; //define model
+        const subCriteria = {};//define a empty where object
+
+        if(typeof req.body.room_type !== 'undefined'){
+            subCriteria.room_type_id =  req.body.room_type;
+        }
+        if(typeof req.body.ppl_limit !== 'undefined'){
+            subCriteria.ppl_limit = {[Op.gte]: req.body.ppl_limit};
+        }
+        if(typeof req.body.price_low !== 'undefined'){
+            subCriteria.price = {
+                [Op.gte]: req.body.price_low,
+                [Op.lte]: req.body.price_up
+            };
+        }
+        
+        if(Object.keys(subCriteria).length !== 0){
+            include.where = subCriteria;
+        }
+        criteria.include = [include];
+
+        console.log(include);
+    /**** End of joining hotel room ****/
     
-    criteria.where = query;
-    criteria.include = [db.hotel_room];
-    console.log(criteria);
+    criteria.attributes = {exclude: ['body']}; //Do not display body field
     
+    //Execute the query
     db.hotel.findAll(criteria).then(result => {
        if(result !== null){
           res.json({
