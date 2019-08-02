@@ -119,7 +119,7 @@ module.exports = (app, db , current) => {
   );
   
   //Searching hotel by postdata
-  app.post( "/hotel/search/normal", (req, res) => {
+  app.post( "/hotel/search/normal", async (req, res) => {
       
     console.log('SEARCHING.......');
     offset = parseInt(req.body.offset);
@@ -155,9 +155,10 @@ module.exports = (app, db , current) => {
         };
     }
     
-    /**** Include joining hotel room table ****/
-        criteria.where = query;
+    /******** Include joining hotel room & tag table ********/
+        criteria.where = query; //The basic where condition on main model - Hotel
 
+        //Include first model-Hotel_room by hotel<->hotel_room relationship
         const include = {model: db.hotel_room}; //define model
         const subCriteria = {};//define a empty where object
 
@@ -177,30 +178,91 @@ module.exports = (app, db , current) => {
         if(Object.keys(subCriteria).length !== 0){
             include.where = subCriteria;
         }
-        criteria.include = [include];
+        
+        //Include second model-Tags through model post_tag
+        const include_2 = {model: db.tags};
+        const subCriteria_2 = {};//define a empty where object
 
+        if(typeof req.body.tag_id !== 'undefined'){
+            subCriteria_2.id =  req.body.tag_id;
+            include_2.where = subCriteria_2;
+        }
+        
+        
+        //Merge both of the include object into an single array
+        criteria.include = [include,include_2];
         console.log(include);
-    /**** End of joining hotel room ****/
+        
+    /******** End of joining hotel room & tag ********/
+    
     
     criteria.attributes = {exclude: ['body']}; //Do not display body field
+    criteria.order =[['id', 'ASC']];
+    console.log(criteria);
+    
+    /* Example of a criteria model based on the association of four tables
+        {   
+            offset: 0,
+            limit: 100,
+            where:{ 
+                soft_delete: { [Symbol(eq)]: '0' },
+                star: { [Symbol(eq)]: '5' } 
+            },
+            include:[ 
+                { 
+                    model: hotel_room, 
+                    where: { 
+                        room_type_id: '3',
+                        ppl_limit: { 
+                                [Symbol(gte)]: '1' 
+                        },
+                        price: { 
+                            [Symbol(gte)]: '100', 
+                            [Symbol(lte)]: '2000' 
+                        } 
+                    }
+                },
+                {   
+                    model: tags, 
+                    where: {
+                        id : '5'
+                    } 
+                } 
+            ],
+            attributes: { exclude: [ 'body' ] },
+            order: [ 
+                [ 'id', 'ASC' ] 
+            ]
+        }
+    */
     
     //Execute the query
-    db.hotel.findAll(criteria).then(result => {
-       if(result !== null){
-          res.json({
+        //    db.hotel.findAll(criteria).then(result => {
+        //       if(result !== null){
+        //          res.json({
+        //            result: 'success' , 
+        //            total: result.length , 
+        //            offset: offset,
+        //            limit: limit,
+        //            data: result 
+        //          });
+        //       } else {
+        //          res.json({ result: 'error', message: 'No data found.' });
+        //       }
+        //    }).catch(err => {
+        //        console.log(err);
+        //    });
+        
+        const hotel_result = await db.hotel.findAll(criteria);
+        res.json({
             result: 'success' , 
-            total: result.length , 
+            total: hotel_result.length , 
             offset: offset,
             limit: limit,
-            data: result 
-          });
-       } else {
-          res.json({ result: 'error', message: 'No data found.' });
-       }
-    }).catch(err => {
-        console.log(err);
-    });
-        
+            data: hotel_result 
+        });
+        //console.log('result',hotel_result);
+
   });
   
   

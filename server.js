@@ -93,6 +93,9 @@ db.room_type.hasMany(db.hotel_room,{foreignKey: 'id'});
 db.hotel_room.belongsTo(db.hotel,{foreignKey: 'id'});
 db.hotel.hasMany(db.hotel_room,{foreignKey: 'hotel_id'});
 
+db.hotel.belongsToMany(db.tags,{  through: 'post_tag', otherKey: 'tag_id', foreignKey: 'hotel_id'});
+db.tags.belongsToMany(db.hotel,{  through: 'post_tag', otherKey: 'hotel_id', foreignKey: 'tag_id'});
+
 
 
 //**** Dummy & testing area ****//
