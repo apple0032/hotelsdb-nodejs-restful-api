@@ -254,6 +254,32 @@ module.exports = (app, db , current) => {
         //    });
         
         const hotel_result = await db.hotel.findAll(criteria);
+        const all_hotels = [];
+        const all_rooms = [];
+        hotel_result.forEach(function(element) {
+            all_hotels.push(element.id);
+            if(Object.keys(element.hotel_rooms).length !== 0){
+                element.hotel_rooms.forEach(function(e2) {
+                    all_rooms.push(e2.id);
+                });
+            }
+        });
+        
+        console.log(all_hotels);
+        console.log(all_rooms);
+        
+        if(typeof req.body.start !== 'undefined'){
+            var start = req.body.start.split("-");
+            var end = req.body.end.split("-");
+            var dates = getDates(new Date(parseInt(start[0]),parseInt(start[1]),parseInt(start[2])), new Date(parseInt(end[0]),parseInt(end[1]),parseInt(end[2])));                                                                                                           
+
+            all_rooms.forEach(function(room) {
+                dates.forEach(function(date) {
+                    validateBooking(room,formatDate(date));
+                });
+            });
+        }
+        
         res.json({
             result: 'success' , 
             total: hotel_result.length , 
@@ -265,9 +291,57 @@ module.exports = (app, db , current) => {
 
   });
   
+    async function validateBooking(hotel_room_id,book_date){
+        
+        const rooms = await db.hotel_room.findById(hotel_room_id);
+        //console.log(rooms.qty);
+//        
+//        const booking = await db.booking.findAndCountAll({
+//            where: {
+//               id: {
+//                 [Op.eq]: hotel_room_id
+//               }
+//            }
+//         });
+        
+        console.log(hotel_room_id);
+        console.log(book_date);
+    }
+  
+  
+    var getDates = function(startDate, endDate) {
+        var dates = [],
+            currentDate = startDate,
+            addDays = function(days) {
+              var date = new Date(this.valueOf());
+              date.setDate(date.getDate() + days);
+              return date;
+            };
+        while (currentDate <= endDate) {
+          dates.push(currentDate);
+          currentDate = addDays.call(currentDate, 1);
+        }
+        return dates;
+    };
+
+    function padding1(num, length) {
+        for(var len = (num + "").length; len < length; len = num.length) {
+            num = "0" + num;            
+        }
+        return num;
+    }
+
+    function formatDate(date) {
+        var day = date.getDate();
+        day =  padding1(day, 2);
+        var month = date.getMonth();
+        month =  padding1(month, 2);
+        var year = date.getFullYear();
+
+        return year+'-'+month+'-'+day;
+    }
   
     function ApiFieldsValidation(params){
-      
         var result = true;
         params.forEach(function(item, index, array){
           if (typeof item == 'undefined' || item == ''){
