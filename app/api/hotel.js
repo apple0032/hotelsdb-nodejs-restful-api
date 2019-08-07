@@ -273,11 +273,39 @@ module.exports = (app, db , current) => {
             var end = req.body.end.split("-");
             var dates = getDates(new Date(parseInt(start[0]),parseInt(start[1]),parseInt(start[2])), new Date(parseInt(end[0]),parseInt(end[1]),parseInt(end[2])));                                                                                                           
 
-            all_rooms.forEach(function(room) {
-                dates.forEach(function(date) {
-                    validateBooking(room,formatDate(date));
-                });
-            });
+            //all_rooms.forEach(function(room) {
+            for (const room of all_rooms) {
+                //dates.forEach(function(date) {
+                for (const date of dates) {
+                    //validateBooking(room,formatDate(date));
+                    console.log(room);
+                    console.log(formatDate(date));
+                    
+                    const rooms = await db.hotel_room.findById(room);
+                    console.log("ROOM "+rooms.qty);
+
+                    const booking = await db.booking.findAndCountAll({
+                        where: {
+                           hotel_room_id: {
+                             [Op.eq]: room
+                           },
+                           in_date: {
+                             [Op.lte]: formatDate(date)
+                           },
+                           out_date: {
+                             [Op.gt]: formatDate(date)
+                           }
+                        }
+                     });
+
+                    console.log("COUNT "+booking.count);
+                    
+                    if(booking.count >= rooms.qty){
+                        //console.log(formatDate(date));
+                        console.log("DDDDDDDDDDDDDDDDDD");
+                    };
+                };
+            };
         }
         
         res.json({
@@ -290,24 +318,6 @@ module.exports = (app, db , current) => {
         //console.log('result',hotel_result);
 
   });
-  
-    async function validateBooking(hotel_room_id,book_date){
-        
-        const rooms = await db.hotel_room.findById(hotel_room_id);
-        //console.log(rooms.qty);
-//        
-//        const booking = await db.booking.findAndCountAll({
-//            where: {
-//               id: {
-//                 [Op.eq]: hotel_room_id
-//               }
-//            }
-//         });
-        
-        console.log(hotel_room_id);
-        console.log(book_date);
-    }
-  
   
     var getDates = function(startDate, endDate) {
         var dates = [],
