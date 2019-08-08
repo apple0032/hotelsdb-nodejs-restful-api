@@ -196,7 +196,8 @@ module.exports = (app, db , current) => {
     /******** End of joining hotel room & tag ********/
     
     
-    criteria.attributes = {exclude: ['body']}; //Do not display body field
+    //criteria.attributes = {exclude: ['body']}; //Do not display body field
+    criteria.attributes = ['id'];
     criteria.order =[['id', 'ASC']];
     console.log(criteria);
     
@@ -253,7 +254,8 @@ module.exports = (app, db , current) => {
         //        console.log(err);
         //    });
         
-        const hotel_result = await db.hotel.findAll(criteria);
+        const hotel_result = await db.hotel.findAll(criteria);   //The final result basic on no room searching 
+        
         const all_hotels = [];
         const all_rooms = [];
         hotel_result.forEach(function(element) {
@@ -268,21 +270,29 @@ module.exports = (app, db , current) => {
         console.log(all_hotels);
         console.log(all_rooms);
         
-        if(typeof req.body.start !== 'undefined'){
-            var start = req.body.start.split("-");
+        if(typeof req.body.end !== 'undefined'){
+            
+            const current_start = current.create().format('Y-m-d');
+            if(typeof req.body.start == 'undefined'){
+                var start = current_start.split("-");
+            } else {
+                var start = req.body.start.split("-");
+            }
+            
             var end = req.body.end.split("-");
             var dates = getDates(new Date(parseInt(start[0]),parseInt(start[1]),parseInt(start[2])), new Date(parseInt(end[0]),parseInt(end[1]),parseInt(end[2])));                                                                                                           
+            const valid_room = [];
 
             //all_rooms.forEach(function(room) {
             for (const room of all_rooms) {
                 //dates.forEach(function(date) {
                 for (const date of dates) {
                     //validateBooking(room,formatDate(date));
-                    console.log(room);
-                    console.log(formatDate(date));
+                    //console.log(room);
+                    //console.log(formatDate(date));
                     
                     const rooms = await db.hotel_room.findById(room);
-                    console.log("ROOM "+rooms.qty);
+                    //console.log("ROOM "+rooms.qty);
 
                     const booking = await db.booking.findAndCountAll({
                         where: {
@@ -298,15 +308,39 @@ module.exports = (app, db , current) => {
                         }
                      });
 
-                    console.log("COUNT "+booking.count);
+                    //console.log("COUNT "+booking.count);
                     
                     if(booking.count >= rooms.qty){
-                        //console.log(formatDate(date));
-                        console.log("DDDDDDDDDDDDDDDDDD");
-                    };
+                        console.log("Full booking...");
+                    } else {
+                        valid_room.push(room);
+                    }
                 };
             };
+            
+            const unique = (value, index, self) => {
+                return self.indexOf(value) === index;
+            }
+
+            const valid_unique_room = valid_room.filter(unique)
+
+            console.log(valid_room);
+            console.log(valid_unique_room);
+            
+            //const hotel_result = await db.hotel.findAll(criteria);
+            
+            const valid_hotel = [];
+            for (const rm of valid_unique_room) {
+                const rms = await db.hotel_room.findById(rm);
+                //console.log(rms.hotel_id);
+                valid_hotel.push(rms.hotel_id);
+            }
+
+            console.log(valid_hotel);
         }
+        
+        
+        
         
         res.json({
             result: 'success' , 
