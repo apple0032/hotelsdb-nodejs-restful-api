@@ -122,15 +122,20 @@ module.exports = (app, db , current) => {
   app.post( "/hotel/search/normal", async (req, res) => {
       
     console.log('SEARCHING.......');
-    offset = parseInt(req.body.offset);
-    limit = parseInt(req.body.limit);
-    if(isNaN(offset)){ offset = 0; }
-    if(isNaN(limit)){ limit = 100; }
+
+    const criteria = {};
     
-    const criteria = {
-        offset:offset,
-        limit:limit
-    };
+    if(typeof req.body.offset !== 'undefined'){
+        criteria.offset = parseInt(req.body.offset); 
+    }
+    if(typeof req.body.limit !== 'undefined'){
+        criteria.limit = parseInt(req.body.limit); 
+    }
+    
+//    const criteria = { 
+//        offset:0,
+//        limit:100
+//    };
     
     const query = {};
     query.soft_delete = {
@@ -267,9 +272,10 @@ module.exports = (app, db , current) => {
             }
         });
         
-        console.log(all_hotels);
-        console.log(all_rooms);
+        //console.log(all_hotels);
+        //console.log(all_rooms);
         
+        const valid_hotel = [];
         if(typeof req.body.end !== 'undefined'){
             
             const current_start = current.create().format('Y-m-d');
@@ -324,31 +330,56 @@ module.exports = (app, db , current) => {
 
             const valid_unique_room = valid_room.filter(unique)
 
-            console.log(valid_room);
+            //console.log(valid_room);
             console.log(valid_unique_room);
             
             //const hotel_result = await db.hotel.findAll(criteria);
             
-            const valid_hotel = [];
+            
             for (const rm of valid_unique_room) {
                 const rms = await db.hotel_room.findById(rm);
                 //console.log(rms.hotel_id);
                 valid_hotel.push(rms.hotel_id);
             }
 
-            console.log(valid_hotel);
+            //console.log(valid_hotel);
         }
         
+        $r_hotel = [];
+        if (typeof valid_hotel !== 'undefined' && valid_hotel.length > 0) {
+            $r_hotel = valid_hotel;
+        } else {
+            $r_hotel = all_hotels;
+        }
         
+        console.log("------------");
+        console.log($r_hotel);
+        
+        const f_crit = {};
+        f_crit.where = {
+            id: {
+                [Op.in]: $r_hotel
+            }
+        };
+        f_crit.order = [ [ 'id', 'ASC' ] ];
+        
+        const in1 = {model: db.hotel_room}
+        const in2 = {model: db.tags}
+        f_crit.include = [in1,in2];
+        
+        f_crit.attributes = {exclude: ['body']};
+            
+        const final_result = await db.hotel.findAll(f_crit);
         
         
         res.json({
             result: 'success' , 
-            total: hotel_result.length , 
-            offset: offset,
-            limit: limit,
-            data: hotel_result 
+            total: final_result.length , 
+            offset: req.body.offset,
+            limit: req.body.limit,
+            data: final_result 
         });
+        
         //console.log('result',hotel_result);
 
   });
