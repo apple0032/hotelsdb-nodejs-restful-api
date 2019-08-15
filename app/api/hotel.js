@@ -384,6 +384,91 @@ module.exports = (app, db , current) => {
 
   });
   
+  app.get( "/hotel/booking/status", async (req, res) => {
+      
+    if ( (!req.query.hotel_id) || (!req.query.start) || (!req.query.end) ) {
+        res.json({
+            result: "fail" , 
+            message: "Missing required parameters."
+        });
+    }
+    
+    hotel_id = parseInt(req.query.hotel_id);
+    start = req.query.start;
+    end = req.query.end;
+    
+    const rooms = await db.hotel_room.findAll({
+            where: {
+              hotel_id: hotel_id
+            },
+            attributes : ['id','qty']
+        });
+        
+    const current_start = current.create().format('Y-m-d');
+    var start = req.query.start.split("-");
+    var end = req.query.end.split("-");
+    var dates = getDates(new Date(parseInt(start[0]),parseInt(start[1]),parseInt(start[2])), new Date(parseInt(end[0]),parseInt(end[1]),parseInt(end[2])));     
+        
+    const valid_room = [];
+    const invalid_room = [];
+    var availabitiy = false;
+    
+    for (const date of dates) {
+        for (const room of rooms) {
+            console.log(room.id);
+
+            const booking = await db.booking.findAndCountAll({
+                where: {
+                   hotel_room_id: {
+                     [Op.eq]: room.id
+                   },
+                   in_date: {
+                     [Op.lte]: formatDate(date)
+                   },
+                   out_date: {
+                     [Op.gt]: formatDate(date)
+                   }
+                }
+             });
+
+            console.log("COUNT "+booking.count);
+
+            if(booking.count >= room.qty){
+                invalid_room.push(room.id);
+            } else {
+                valid_room.push(room.id);
+            }
+        }
+    }
+
+    const unique = (value, index, self) => {
+        return self.indexOf(value) === index;
+    };
+
+    const invalid = invalid_room.filter(unique);
+    const valid = valid_room.filter(unique);
+    
+    if(invalid.length != 0){
+        availabitiy = false;
+    } else {
+        if(valid.length != 0){
+            availabitiy = true;
+        }
+    }
+    
+    res.json({
+        start: req.query.start,
+        end: req.query.end,
+        hotel_id: hotel_id,
+        rooms: rooms,
+        valid_room: valid,
+        invalid_room: invalid,
+        availabitiy: availabitiy
+    });
+    
+      
+  });
+  
     var getDates = function(startDate, endDate) {
         var dates = [],
             currentDate = startDate,
