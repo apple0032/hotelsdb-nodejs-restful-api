@@ -384,7 +384,7 @@ module.exports = (app, db , current) => {
 
   });
   
-  app.get( "/hotel/booking/status", async (req, res) => {
+  app.get( "/hotel/booking/validate", async (req, res) => {
       
     if ( (!req.query.hotel_id) || (!req.query.start) || (!req.query.end) ) {
         res.json({
@@ -434,9 +434,9 @@ module.exports = (app, db , current) => {
             console.log("COUNT "+booking.count);
 
             if(booking.count >= room.qty){
-                invalid_room.push(room.id);
+                invalid_room.push({date:formatDate(date),room:room.id});
             } else {
-                valid_room.push(room.id);
+                valid_room.push({date:formatDate(date),room:room.id});
             }
         }
     }
@@ -445,15 +445,11 @@ module.exports = (app, db , current) => {
         return self.indexOf(value) === index;
     };
 
-    const invalid = invalid_room.filter(unique);
-    const valid = valid_room.filter(unique);
+    const invalid = invalid_room;
+    const valid = valid_room;
     
-    if(invalid.length != 0){
-        availabitiy = false;
-    } else {
-        if(valid.length != 0){
-            availabitiy = true;
-        }
+    if(valid.length != 0){
+        availabitiy = true;
     }
     
     res.json({
@@ -469,6 +465,49 @@ module.exports = (app, db , current) => {
       
   });
   
+    app.get( "/hotel/booking/status", async (req, res) => {
+        
+        if ( (!req.query.hotel_id) || (!req.query.start) || (!req.query.end) ) {
+            res.json({
+                result: "fail" , 
+                message: "Missing required parameters."
+            });
+        }
+        
+        criteria = {};
+        criteria.where = {
+            hotel_id: {
+              [Op.eq]: req.query.hotel_id
+            },
+            out_date: {
+              [Op.gt]: req.query.start
+            },
+            in_date: {
+              [Op.lte]: req.query.end
+            }
+        };
+        
+        const in1 = {model: db.hotel_room};
+        in1.include = {model: db.room_type};
+        
+        const in2 = {model: db.payment_method};
+        criteria.include = [in1,in2];
+        
+        const booking = await db.booking.findAll(criteria);
+        
+
+        res.json({
+            result: 'success' , 
+            start: req.query.start,
+            end: req.query.end,
+            hotel_id: req.query.hotel_id,
+            total: booking.length,
+            booking: booking
+        });
+        
+    });
+    
+    
     var getDates = function(startDate, endDate) {
         var dates = [],
             currentDate = startDate,

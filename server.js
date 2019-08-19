@@ -96,7 +96,14 @@ db.hotel.hasMany(db.hotel_room,{foreignKey: 'hotel_id'});
 db.hotel.belongsToMany(db.tags,{  through: 'post_tag', otherKey: 'tag_id', foreignKey: 'hotel_id'});
 db.tags.belongsToMany(db.hotel,{  through: 'post_tag', otherKey: 'hotel_id', foreignKey: 'tag_id'});
 
+db.booking.belongsTo(db.hotel,{foreignKey: 'hotel_id'});
+db.hotel.hasMany(db.booking,{foreignKey: 'id'});
 
+db.booking.belongsTo(db.hotel_room,{foreignKey: 'hotel_room_id'});
+db.hotel_room.hasMany(db.booking,{foreignKey: 'id'});
+
+db.booking.belongsTo(db.payment_method,{foreignKey: 'payment_method_id'});
+db.payment_method.hasMany(db.booking,{foreignKey: 'id'});
 
 //**** Dummy & testing area ****//
 
@@ -187,8 +194,8 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  *  - [POST] /hotel/search/advanced
  *  
  * # Booking Hotel
- *  - [GET]  /hotel/booking/status?hotel=&date=   *check room status by hotel
- *  - [GET]  /hotel/booking/validation?hotelroom=&date=   *validate a hotel room by room_id
+ *  - [GET]  /hotel/booking/status?hotel_id=&start=&end=   *check room status by hotel
+ *  - [GET]  /hotel/booking/validate?hotel_id=&start=&end=   *validate a hotel room by room_id
  *  - [GET]  /hotel/booking/{userid} *get all hotel booking by userid
  *  - [GET]  /hotel/booking/details/{bookid}
  *  - [POST] /hotel/booking/create
