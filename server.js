@@ -105,6 +105,12 @@ db.hotel_room.hasMany(db.booking,{foreignKey: 'id'});
 db.booking.belongsTo(db.payment_method,{foreignKey: 'payment_method_id'});
 db.payment_method.hasMany(db.booking,{foreignKey: 'id'});
 
+db.booking.belongsTo(db.users,{foreignKey: 'user_id'});
+db.users.hasMany(db.booking,{foreignKey: 'id'});
+
+db.booking.belongsTo(db.booking_payment,{foreignKey: 'id'});
+db.booking_payment.hasMany(db.booking_payment,{foreignKey: 'booking_id'});
+
 //**** Dummy & testing area ****//
 
 //Password encryption algorithm same as laravel

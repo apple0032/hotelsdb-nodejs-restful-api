@@ -507,6 +507,86 @@ module.exports = (app, db , current) => {
         
     });
     
+    app.get( "/hotel/booking/:user_id", async (req, res) => {
+    
+        //console.log(req.query.hotel_id);
+        criteria = {};
+        cwhere = {
+            user_id: {
+              [Op.eq]: req.params.user_id
+            }
+        };
+        
+        if(req.query.hotel_id){
+            cwhere.hotel_id = {
+              [Op.eq]: req.query.hotel_id
+            };
+        }
+        if(req.query.start){
+            cwhere.in_date = {
+              [Op.lte]: req.query.end
+            };
+        }
+        if(req.query.end){
+            cwhere.out_date = {
+              [Op.gt]: req.query.start
+            };
+        }
+        
+        criteria.where = cwhere;
+        
+        const in1 = {model: db.hotel_room};
+        in1.include = {model: db.room_type};
+        
+        const in2 = {model: db.payment_method};
+        criteria.include = [in1,in2];
+        
+        const booking = await db.booking.findAll(criteria);
+        
+
+        res.json({
+            result: 'success' , 
+            start: req.query.start,
+            end: req.query.end,
+            hotel_id: req.query.hotel_id,
+            total: booking.length,
+            booking: booking
+        });
+        
+    });
+    
+    app.get( "/hotel/booking/details/:book_id", async (req, res) => {
+        
+        criteria = {};
+        
+        criteria.where = {
+            id: {
+              [Op.eq]: req.params.book_id
+            }
+        };
+        
+        const in1 = {model: db.hotel_room};
+        in1.include = {model: db.room_type};
+        
+        const in3 = {model: db.users};
+        in3.attributes = {exclude: ['password','api_key']};;
+        
+        const in4 = {model: db.hotel};
+        in4.attributes = {exclude: ['body']};
+        
+        const in2 = {model: db.payment_method};
+        const in5 = {model: db.booking_payment};
+        
+        criteria.include = [in1,in2,in3,in4,in5];
+        
+        const details = await db.booking.find(criteria);
+        
+        res.json({
+            result: 'success',
+            bookng_id: req.params.book_id,
+            details: details
+        });
+    });
     
     var getDates = function(startDate, endDate) {
         var dates = [],
