@@ -108,9 +108,11 @@ db.payment_method.hasMany(db.booking,{foreignKey: 'id'});
 db.booking.belongsTo(db.users,{foreignKey: 'user_id'});
 db.users.hasMany(db.booking,{foreignKey: 'id'});
 
-db.booking.belongsTo(db.booking_payment,{foreignKey: 'id'});
-db.booking_payment.hasMany(db.booking_payment,{foreignKey: 'booking_id'});
+db.booking.hasOne(db.booking_payment,{foreignKey: 'booking_id'});
+db.booking_payment.belongsTo(db.booking,{foreignKey: 'id'});
 
+db.booking.hasMany(db.booking_guest,{foreignKey: 'booking_id'});
+db.booking_guest.belongsTo(db.booking,{foreignKey: 'id'});
 //**** Dummy & testing area ****//
 
 //Password encryption algorithm same as laravel
@@ -197,7 +199,7 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  *  
  * # Searching Hotel
  *  - [POST] /hotel/search/normal
- *  - [POST] /hotel/search/advanced
+ *  - [POST] /hotel/search/advanced //Pending for researching...
  *  
  * # Booking Hotel
  *  - [GET]  /hotel/booking/status?hotel_id=&start=&end=   *check room status by hotel

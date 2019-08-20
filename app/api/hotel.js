@@ -434,9 +434,9 @@ module.exports = (app, db , current) => {
             console.log("COUNT "+booking.count);
 
             if(booking.count >= room.qty){
-                invalid_room.push({date:formatDate(date),room:room.id});
+                invalid_room.push({date:formatDate(date),room:room.id,qty:room.qty,count:booking.count});
             } else {
-                valid_room.push({date:formatDate(date),room:room.id});
+                valid_room.push({date:formatDate(date),room:room.id,qty:room.qty,count:booking.count});
             }
         }
     }
@@ -565,20 +565,39 @@ module.exports = (app, db , current) => {
             }
         };
         
-        const in1 = {model: db.hotel_room};
-        in1.include = {model: db.room_type};
+        const room = {model: db.hotel_room};
+        room.include = {model: db.room_type};
         
-        const in3 = {model: db.users};
-        in3.attributes = {exclude: ['password','api_key']};;
+        const user = {model: db.users};
+        user.attributes = {exclude: ['password','api_key']};
         
-        const in4 = {model: db.hotel};
-        in4.attributes = {exclude: ['body']};
+        const hotel = {model: db.hotel};
+        hotel.attributes = {exclude: ['body']};
         
-        const in2 = {model: db.payment_method};
-        const in5 = {model: db.booking_payment};
+        const method = {model: db.payment_method};
+        const payment = {model: db.booking_payment};
+        const guest = {model: db.booking_guest};
         
-        criteria.include = [in1,in2,in3,in4,in5];
+        criteria.include = [room,user,hotel,method,payment,guest];
         
+        console.log(criteria);
+        
+//      Raw format of criteria object
+//        {   
+//            where: { 
+//              id: { [Symbol(eq)]: '100' } 
+//            },
+//            include:
+//                [ 
+//                    { model: hotel_room, include: {model: db.room_type} },
+//                    { model: payment_method },
+//                    { model: users, attributes: {exclude: ['password','api_key']} },
+//                    { model: hotel, attributes: {exclude: ['body']} },
+//                    { model: booking_payment },
+//                    { model: booking_guest } 
+//                ] 
+//        }
+     
         const details = await db.booking.find(criteria);
         
         res.json({
@@ -587,6 +606,108 @@ module.exports = (app, db , current) => {
             details: details
         });
     });
+    
+    
+    
+    app.post( "/hotel/booking/create", async(req, res) => {
+        
+        create_obj = {
+            user_id : req.body.user_id,
+            hotel_id : req.body.hotel_id,
+            hotel_room_id: req.body.hotel_room_id,
+            people: req.body.people,
+            in_date: req.body.in_date,
+            out_date: req.body.out_date,
+            book_date: req.body.book_date,
+            total_price: req.body.total_price,
+            payment_method_id: req.body.payment_method_id,
+            approved: 1,
+            status: 1,
+            created_at: current.create().format('Y-m-d H:M:S'),
+            updated_at: current.create().format('Y-m-d H:M:S')
+        };
+        
+        const booking = await db.booking.create(create_obj);
+        
+        res.json({
+            result: 'success',
+            booking: booking
+        });
+    
+    });
+    
+    
+    app.post( "/hotel/booking/payment/:book_id", async(req, res) => {
+        
+        const booking = await db.booking.findById(req.params.book_id);
+        const hotel = await db.hotel.findById(booking.hotel_id);
+        const hotel_room = await db.hotel_room.findById(booking.hotel_room_id);
+        
+        create_obj = {
+            booking_id : req.params.book_id,
+            user_id : booking.user_id,
+            single_price : hotel_room.price,
+            handling_price : hotel.handling_price,
+            total_price: booking.total_price,
+            payment_method_id: req.body.payment_method_id,
+            created_at: current.create().format('Y-m-d H:M:S'),
+            updated_at: current.create().format('Y-m-d H:M:S')
+        };
+        
+        if(typeof req.body.payment_method_id !== 'undefined'){
+            if(req.body.payment_method_id == 5){
+                create_obj.status = 0;
+            } else {
+                create_obj.status = 1;
+                create_obj.card_number = req.body.card_number;
+                create_obj.expired_date = req.body.expired_date;
+                create_obj.security_number = req.body.security_number;
+            }
+        }
+        
+        const payment = await db.booking_payment.create(create_obj);
+        
+        res.json({
+            result: 'success',
+            book_id: req.params.book_id,
+            create_obj: create_obj,
+            payment: payment
+        });
+        
+    });
+    
+    
+    app.post( "/hotel/booking/guest/:book_id", async(req, res) => {
+        
+        const guests = JSON.parse(req.body.guest_json);
+        
+        var created = [];
+        for (const guest of guests.guest) {
+            const gt = await db.booking_guest.create(
+                {
+                    booking_id : req.params.book_id,
+                    name : guest.name,
+                    phone : guest.phone,
+                    gender : guest.gender,
+                    email : guest.email,
+                    created_at: current.create().format('Y-m-d H:M:S'),
+                    updated_at: current.create().format('Y-m-d H:M:S')
+                }
+            );
+    
+            created.push(gt);
+        };
+
+        res.json({
+            result: 'success',
+            book_id: req.params.book_id,
+            guest_json: guests,
+            created: created
+        });
+        
+    });
+    
+    
     
     var getDates = function(startDate, endDate) {
         var dates = [],
