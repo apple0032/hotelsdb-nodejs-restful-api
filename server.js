@@ -215,7 +215,7 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  * # Searching Flight
  *  - [GET] /flight/searchCounty/{text}  *search country
  *  - [GET] /flight/searchAirport/{countrycode} *search airports by country code
- *  - [GET] /flight/result?country=&code=&city=&from=&to=&start=&to= *search all flights
+ *  - [GET] /flight/result/{from}/{to}/{date} *search all flights
  *  
  * # Booking Flight
  *  - [POST] /flight/booking
