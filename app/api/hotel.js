@@ -680,6 +680,26 @@ module.exports = (app, db , current) => {
     app.post( "/hotel/booking/guest/:book_id", async(req, res) => {
         
         const guests = JSON.parse(req.body.guest_json);
+        /*JSON example -
+         * 
+            { "guest":
+                [
+                    {
+                        "name": "KENIP",
+                        "phone": "12345678",
+                        "gender": "M",
+                        "email" : "test@gmail.com"
+                    },
+                    {
+                        "name": "KENCHAN",
+                        "phone": "63269874",
+                        "gender": "F",
+                        "email" : "test2@gmail.com"
+                    }
+                ]
+            }
+         * 
+         */
         
         var created = [];
         for (const guest of guests.guest) {

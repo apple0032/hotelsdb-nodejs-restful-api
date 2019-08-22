@@ -8,6 +8,7 @@ const request = require('request');
 
 const apiUsers = require("./app/api/users");
 const apiHotel = require("./app/api/hotel");
+const apiFlight = require("./app/api/flight");
 const apiAccount = require("./app/api/account");
 
 const app = express();
@@ -80,6 +81,7 @@ function ApiKeyChecking(req, res, next){
 function initApi(next){
     apiUsers(app, db, current);
     apiHotel(app, db, current);
+    apiFlight(app, db, current);
     apiAccount(app,db,current);
     next();
 }
@@ -211,9 +213,8 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  *  - [post] /hotel/bookong/guest/{bookid}
  * 
  * # Searching Flight
- *  - [GET] /flight/searchcounty/{text}  *search country
- *  - [GET] /flight/searchairport/{countrycode} *seach citycode
- *  - [GET] /flight/getairportlist/{citycode} *search airports
+ *  - [GET] /flight/searchCounty/{text}  *search country
+ *  - [GET] /flight/searchAirport/{countrycode} *search airports by country code
  *  - [GET] /flight/result?country=&code=&city=&from=&to=&start=&to= *search all flights
  *  
  * # Booking Flight
