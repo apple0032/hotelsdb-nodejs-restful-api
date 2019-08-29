@@ -115,6 +115,9 @@ db.booking_payment.belongsTo(db.booking,{foreignKey: 'id'});
 
 db.booking.hasMany(db.booking_guest,{foreignKey: 'booking_id'});
 db.booking_guest.belongsTo(db.booking,{foreignKey: 'id'});
+
+db.flight_booking.hasMany(db.flight_passenger,{foreignKey: 'flight_booking_id'});
+db.flight_passenger.belongsTo(db.flight_booking,{foreignKey: 'id'});
 //**** Dummy & testing area ****//
 
 //Password encryption algorithm same as laravel
@@ -218,11 +221,11 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  *  - [GET] /flight/result/{from}/{to}/{date} *search all flights
  *  
  * # Booking Flight
- *  - [POST] /flight/booking
  *  - [GET]  /flight/booking/{userid}
  *  - [GET]  /flight/booking/details/{bookingid}
- *  - [POST] /flight/booking/seat/{userid}
  *  - [GET]  /flight/booking/seat/q?bookid=&date=&time=
+ *  - [POST] /flight/booking
+ *  - [POST] /flight/booking/seat/{userid}
  *  
  * # Trip management
  *  

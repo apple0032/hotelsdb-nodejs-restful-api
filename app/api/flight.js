@@ -96,8 +96,8 @@ module.exports = (app, db , current) => {
         
         
         const formData = {
-            client_id:     'xChYNnOdtNv79sVHz6rOODrAGnP513h9', 
-            client_secret: 'PYUVzTH118ds6P9M', 
+            client_id:     '', 
+            client_secret: '', 
             grant_type:  'client_credentials'
         };
 
@@ -210,5 +210,69 @@ module.exports = (app, db , current) => {
         
         return flights;
     }
+  
+  app.get( "/flight/booking/:userid", async(req, res) => {
+    
+    const bookings = await db.flight_booking.findAll({
+        where: {
+           user_id: {
+             [Op.eq]: req.params.userid
+           }
+        },
+        order : [['dep_date', 'DESC']]
+    });
+    
+    var group = [];
+    var book = {};
+    for (const bk of bookings) {
+        if(!group.includes(bk.related_flight_id)){
+            group.push(bk.related_flight_id);
+            
+            book[bk.related_flight_id] = [];
+            book[bk.related_flight_id].push(bk);
+        } else {
+            book[bk.related_flight_id].push(bk);
+        }
+    }
+    
+    res.send({
+        result: 'success',
+        total_bookings: bookings.length,
+        total_groups: group.length,
+        group: group,
+        bookings: book
+    });
+        
+  });
+  
+  app.get( "/flight/booking/details/:booking_id", async(req, res) => {
+      
+    const booking = await db.flight_booking.find({
+        where: {
+           id: {
+             [Op.eq]: req.params.booking_id
+           }
+        },
+        include: [{model: db.flight_passenger}]
+    });
+    
+    console.log(booking.related_flight_id);
+    
+    const payment = await db.flight_payment.find({
+        where: {
+           related_flight_id: {
+             [Op.eq]: booking.related_flight_id
+           }
+        }
+    });
+     
+    res.send({
+        result: 'success',
+        booking: booking,
+        flight_payment: payment
+    });
+    
+  });
+  
   
 };
