@@ -6,6 +6,7 @@ const random = require("lodash.random");
 const db = require("./models");
 const request = require('request');
 
+const apiIndex = require("./app/api/index");
 const apiUsers = require("./app/api/users");
 const apiHotel = require("./app/api/hotel");
 const apiFlight = require("./app/api/flight");
@@ -43,7 +44,8 @@ function ApiKeyChecking(req, res, next){
     
     var exception = [
         '/account/login',
-        '/hotel/search/normal'
+        '/hotel/search/normal',
+        '/index'
     ];
     var ExceptResult = exception.includes(ApiRequest);
     
@@ -79,6 +81,7 @@ function ApiKeyChecking(req, res, next){
 }
 
 function initApi(next){
+    apiIndex(app);
     apiUsers(app, db, current);
     apiHotel(app, db, current);
     apiFlight(app, db, current);
