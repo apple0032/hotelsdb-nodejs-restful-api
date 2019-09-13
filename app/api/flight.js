@@ -256,15 +256,20 @@ module.exports = (app, db , current) => {
         include: [{model: db.flight_passenger}]
     });
     
-    console.log(booking.related_flight_id);
+    //console.log(booking.related_flight_id);
     
-    const payment = await db.flight_payment.find({
-        where: {
-           related_flight_id: {
-             [Op.eq]: booking.related_flight_id
-           }
-        }
-    });
+    var payment = {};
+    if(booking != null){
+        payment = await db.flight_payment.find({
+            where: {
+               related_flight_id: {
+                 [Op.eq]: booking.related_flight_id
+               }
+            }
+        });
+    } else {
+        payment = null;
+    }
      
     res.send({
         result: 'success',
@@ -274,5 +279,61 @@ module.exports = (app, db , current) => {
     
   });
   
-  
+  app.get( "/flight/seat", async(req, res) => {
+        
+        if ((!req.query.code) || (!req.query.date)) {
+            res.json({
+                result: "fail" , 
+                message: "Missing required parameters."
+            });
+        }
+        
+        
+        const booking = await db.flight_booking.findAll({
+            where: {
+               flight_code: {
+                 [Op.eq]: req.query.code
+               },
+               dep_date: {
+                 [Op.eq]: req.query.date
+               },
+            },
+            include: [{model: db.flight_passenger}]
+        });
+    
+        var seat = [];
+        var npass = 0;
+        if(booking != null){
+            for (const bk of booking) {
+               if(typeof(bk["flight_passengers"]) != "undefined"){
+                    for (const pass of bk.flight_passengers) {
+                        npass++;
+                        if(pass.seat != null){
+                            seat.push(pass.seat);
+                        }
+                    }
+                }
+            }
+        }
+    
+        //console.log(booking.related_flight_id);
+        var availabitiy = true; 
+        if (req.query.seat){
+            if(seat.includes(req.query.seat)){
+                availabitiy = false; 
+            }
+        }
+        
+        res.send({
+            result: 'success',
+            code: req.query.code,
+            date: req.query.date,
+            booking: booking,
+            seat: seat,
+            numbers_of_booking: booking.length,
+            numbers_of_passengers: npass,
+            numbers_of_seat: seat.length,
+            availabitiy: availabitiy
+        });
+  });
 };

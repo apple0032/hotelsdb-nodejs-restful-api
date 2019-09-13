@@ -24,7 +24,6 @@ module.exports = (sequelize, DataTypes) => {
       duration: DataTypes.STRING,
       plane: DataTypes.STRING,
       class: DataTypes.STRING,
-      seat: DataTypes.STRING,
       price: DataTypes.INTEGER,
       tax: DataTypes.INTEGER,
       is_single_way: DataTypes.INTEGER,
