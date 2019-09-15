@@ -539,7 +539,8 @@ module.exports = (app, db , current) => {
         in1.include = {model: db.room_type};
         
         const in2 = {model: db.payment_method};
-        criteria.include = [in1,in2];
+        const in3 = {model: db.hotel , attributes : ['id', 'name']};
+        criteria.include = [in1,in2,in3];
         
         const booking = await db.booking.findAll(criteria);
         
