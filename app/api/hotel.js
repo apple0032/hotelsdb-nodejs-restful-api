@@ -728,6 +728,21 @@ module.exports = (app, db , current) => {
         
     });
     
+    app.put( "/hotel/trip_match/:tripid/:bookid", (req, res) => {
+        db.trip.update({
+            booking_id: req.params.bookid
+          },
+          {
+            where: {
+              id: req.params.tripid
+            }
+          }).then( (result) => {
+              res.json({ result: 'success' });
+          }).catch(err => {
+              res.json({ result: 'error' });
+          });
+    });
+    
     
     
     var getDates = function(startDate, endDate) {
