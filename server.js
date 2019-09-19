@@ -226,9 +226,9 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  * # Booking Flight
  *  - [GET]  /flight/booking/{userid}
  *  - [GET]  /flight/booking/details/{bookingid}
- *  - [GET]  /flight/seat?code=&date=&time=
- *  - [POST] /flight/booking
+ *  - [GET]  /flight/seat?code=&date=&seat=
  *  - [POST] /flight/seat/{bookingid}
+ *  - [POST] /flight/booking
  *  
  * # Trip management
  *  

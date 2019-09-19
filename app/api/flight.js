@@ -336,4 +336,73 @@ module.exports = (app, db , current) => {
             availabitiy: availabitiy
         });
   });
+  
+  app.post( "/flight/seat/:bookingid", async(req, res) => {
+      
+        if (typeof req.body.seat == 'undefined' || req.body.seat == ''){
+            res.json({
+                result: 'error', 
+                message: 'Missing required parameters.' 
+            });
+        }
+      
+        const booking = await db.flight_booking.find({
+            where: {
+               id: {
+                 [Op.eq]: req.params.bookingid
+               }
+            },
+            include: [{model: db.flight_passenger}]
+        });
+        
+        var availability = 0;
+        var available = [];
+        for (const passengers of booking.flight_passengers) {
+            if(passengers.seat == null){
+                availability++;
+                available.push(passengers);
+            }
+        }
+        
+        var newseat = [];
+         for (const seat of req.body.seat.split(",")) {
+            if(seat != ''){
+                newseat.push(seat);
+            }
+        }
+
+        if(newseat.length > availability){
+            res.send({
+                result: 'error',
+                code: '600',
+                message: 'Not enough seat to set where the available seat number is '+availability
+            });
+        }
+        
+        //console.log(available);
+        var updated = [];
+        for (const [index,v] of newseat.entries()) {
+            db.flight_passenger.update({
+                seat: v
+            },
+            {
+                where: {
+                  id: available[index].id
+                }
+            });
+            
+            available[index].seat = v;
+            updated.push(available[index]);
+        }
+        
+        res.send({
+            result: 'success',
+            booking: booking,
+            total_passenger: booking.flight_passengers.length,
+            total_availability: availability,
+            seat: newseat,
+            updated_seat: updated
+        });
+  });
+  
 };
