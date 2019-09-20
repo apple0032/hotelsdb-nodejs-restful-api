@@ -405,4 +405,13 @@ module.exports = (app, db , current) => {
         });
   });
   
+  app.post( "/flight/booking", async(req, res) => {
+      
+        
+      
+        res.send({
+            result: 'success'
+        });
+  });
+  
 };

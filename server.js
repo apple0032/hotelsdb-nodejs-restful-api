@@ -87,6 +87,14 @@ function initApi(next){
     apiFlight(app, db, current);
     apiAccount(app,db,current);
     next();
+    
+    app.use('*', function(req, res){
+        res.send({
+            result: 'error',
+            code: '404',
+            message: 'Sorry, invalid routes or request method found.'
+        });
+    });
 }
 
 
