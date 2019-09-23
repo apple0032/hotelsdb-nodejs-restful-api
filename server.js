@@ -92,7 +92,7 @@ function initApi(next){
         res.send({
             result: 'error',
             code: '404',
-            message: 'Sorry, invalid routes or request method found.'
+            message: 'Sorry, invalid route or request method found.'
         });
     });
 }
@@ -237,6 +237,8 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  *  - [GET]  /flight/seat?code=&date=&seat=
  *  - [POST] /flight/seat/{bookingid}
  *  - [POST] /flight/booking
+ *  - [POST] /flight/payment
+ *  - [POST] /flight/passenger
  *  
  * # Trip management
  *  

@@ -406,11 +406,134 @@ module.exports = (app, db , current) => {
   });
   
   app.post( "/flight/booking", async(req, res) => {
-      
         
+        const booking = await db.flight_booking.create({
+            user_id: req.body.user_id,
+            related_flight_id: req.body.related_flight_id,
+            country: req.body.country,
+            country_code: req.body.country_code,
+            city: req.body.city,
+            arr_country: req.body.arr_country,
+            arr_country_code: req.body.arr_country_code,
+            dep_airport: req.body.dep_airport,
+            arr_airport: req.body.arr_airport,
+            dep_date: req.body.dep_date,
+            airline_name: req.body.airline_name,
+            airline_code: req.body.airline_code,
+            flight_code: req.body.flight_code,
+            flight_start: req.body.flight_start,
+            flight_end: req.body.flight_end,
+            duration: req.body.duration,
+            plane: req.body.plane,
+            price: req.body.price,
+            tax: req.body.tax,
+            class: req.body.class,
+            is_single_way : req.body.is_single_way,
+        });
       
         res.send({
-            result: 'success'
+            result: 'success',
+            booking: booking
+        });
+  });
+  
+  /*Example dummy data of request form-data
+   * 
+        user_id:2
+        related_flight_id:XDXDXD
+        country:Hong Kong
+        country_code:HK
+        city:osaka
+        arr_country:Japan
+        arr_country_code:JP
+        dep_airport:HKG
+        arr_airport:KIX
+        dep_date:2019-11-15 00:00:00
+        airline_name:Hong Kong Express
+        airline_code:UO
+        flight_code:UO624
+        flight_start:22:45:00
+        flight_end:03:45:00
+        duration:4H0M
+        plane:321
+        price:1397
+        tax:347
+        class:ECONOMY
+        is_single_way:0
+   * 
+   */
+  
+  app.post( "/flight/payment", async(req, res) => {
+        
+        const payment = await db.flight_payment.create({
+            user_id: req.body.user_id,
+            flight_booking_id: req.body.flight_booking_id,
+            related_flight_id: req.body.related_flight_id,
+            total_price: req.body.total_price,
+            payment_method: req.body.payment_method,
+            card_number: req.body.card_number,
+            expired_date: req.body.expired_date,
+            security_number: req.body.security_number,
+            is_single_way: req.body.is_single_way,
+            status: req.body.status
+        });
+      
+        res.send({
+            result: 'success',
+            payment: payment
+        });
+  });
+  
+  /*
+    user_id:2
+    flight_booking_id:12
+    related_flight_id:XDXDXD
+    total_price:1400
+    payment_method:1
+    card_number:12345678
+    expired_date:2019-12
+    security_number:666
+    is_single_way:0
+    status:1
+   */
+
+    
+  app.post( "/flight/passenger", async(req, res) => {
+        
+        const passenger = JSON.parse(req.body.passenger);
+        /*JSON example -
+         * 
+            { "passenger":
+                [
+                    {
+                        "name": "KENIP",
+                        "passport": "12345678"
+                    },
+                    {
+                        "name": "KENCHAN",
+                        "passport": "63269874"
+                    }
+                ]
+            }
+         * 
+         */
+        var saved_passenger = [];
+        
+        for (const pass of passenger.passenger) {
+            //console.log(pass.name);
+            const passengers = await db.flight_passenger.create({
+                related_flight_id: req.body.related_flight_id,
+                flight_booking_id: req.body.flight_booking_id,
+                people_name: pass.name,
+                people_passport: pass.passport
+            });
+            
+            saved_passenger.push(passengers);
+        }
+      
+        res.send({
+            result: 'success',
+            passenger: saved_passenger
         });
   });
   
