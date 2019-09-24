@@ -11,6 +11,8 @@
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.18.3",
     "express": "^4.16.3",
+    "express-list-endpoints": "^4.0.1",
+    "express-list-routes": "^0.1.4",
     "express-validator": "^6.0.1",
     "mysql2": "^1.5.3",
     "node-datetime": "^2.1.2",

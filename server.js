@@ -18,6 +18,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("app/public"));
 
 const current = require('node-datetime');
+const listEndpoints = require('express-list-endpoints');
 //const dt = dateTime.create();
 //const current = dateTime.create().format('Y-m-d H:M:S');
 //console.log(current.create().format('Y-m-d H:M:S'));
@@ -185,6 +186,26 @@ app.get( "/async-test", async (req, res) => {
   }
 );
   
+app.get( "/list", async (req, res) => {
+    
+    var list = listEndpoints(app);
+    list[0] = null;
+    
+    var endpoints = [];
+    for (const li of list) {
+        if(li != null){
+            endpoints.push(li.path);
+        }
+    }
+    
+    res.send({
+        result: 'success',
+        endpoints: endpoints,
+        total: endpoints.length
+    });
+    
+  }
+);
 
 //Node.js server listener
 
