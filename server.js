@@ -11,6 +11,7 @@ const apiUsers = require("./app/api/users");
 const apiHotel = require("./app/api/hotel");
 const apiFlight = require("./app/api/flight");
 const apiAccount = require("./app/api/account");
+const apiTrip = require("./app/api/trip");
 
 const app = express();
 //app.use(bodyParser.json());
@@ -87,6 +88,7 @@ function initApi(next){
     apiHotel(app, db, current);
     apiFlight(app, db, current);
     apiAccount(app,db,current);
+    apiTrip(app,db,current);
     next();
     
     app.use('*', function(req, res){
