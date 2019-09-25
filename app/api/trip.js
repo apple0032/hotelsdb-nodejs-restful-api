@@ -1,9 +1,8 @@
-var Sequelize = require('sequelize');
+const Sequelize = require('sequelize');
+const request = require('request-promise-native');
 const Op = Sequelize.Op;
+const dummy_json = require('../../config/dummy.json');
 const key = require("../../config/api_config");
-var request = require('request-promise-native');
-var dummy_json = require('../../config/dummy.json');
-
 
 module.exports = (app, db , current) => {
   
@@ -56,6 +55,7 @@ module.exports = (app, db , current) => {
             /*
                 Categories & tags list : https://docs.google.com/spreadsheets/d/1VZvr3W6AJYULigHucHkUq4agZ_O5VP1UL4yfaU3ry0A/edit#gid=0
                 Supported categories are : traveling,shopping,eating,doing_sports,hiking,relaxing,playing,going_out,sightseeing,discovering
+                Standard categories = shopping,eating,relaxing,sightseeing,playing,going_out,discovering,hiking
             */
 
             //First, we need the trip start and end date to count the total days of trip
@@ -69,14 +69,22 @@ module.exports = (app, db , current) => {
             //Get the priority of the categories
             /* Example of json format
                     {"traveling": 5,"shopping": 4,"eating" : 3,"relaxing" : 2,"sightseeing" : 3}
+                    {"shopping": 4,"eating" : 3,"relaxing" : 2,"sightseeing" : 3, "playing": 3}
              */
             var priority = req.body.priority;
             if(typeof priority == 'undefined'){
-                priority = `{"sightseeing" : 5}`;
+                priority = `{"shopping":5,"eating":5,"relaxing":5,"sightseeing":5,"playing":5,"going_out":5,"discovering": 5}`;
             }
             
             //Convert json string to json object
             var priority = JSON.parse(priority);
+
+            var standard_categories = ["shopping","eating","relaxing","sightseeing","playing","going_out","discovering","hiking"];
+            standard_categories.forEach(function(item,k){
+                if(!priority.hasOwnProperty(item)){
+                    priority[item] = 1;
+                }
+            });
             
             //Calculate the total base number of priority
             var total_priority = 0;
@@ -104,8 +112,8 @@ module.exports = (app, db , current) => {
                     }
                 }
             }
-            
-            //Filter the random POIs according to the category absract number
+
+            //Filter the random POIs according to the category abstract number
             var poi_arr = {};
             var pool = [];
             for (var p in priority) {
@@ -121,7 +129,8 @@ module.exports = (app, db , current) => {
                             var rand = gp_cat[n];
                             poigp.push(rand);
                             pool.push(rand);
-                            poi_arr[p] = {total: poigp.length, poi: poigp};
+                            poi_arr[p] = {total: poigp.length};
+                            //poi_arr[p] = {total: poigp.length, poi: poigp};
                             gp_cat.splice(n, 1);
                         }
                     }
@@ -129,7 +138,7 @@ module.exports = (app, db , current) => {
                     //poi_arr[p] = {poi: gp_cat[0]};
                 }
             }
-            
+
             
 
         res.json({
@@ -140,10 +149,10 @@ module.exports = (app, db , current) => {
             trip_days: trip_days,
             sources_limit: sources_limit,
             original_total_poi: total_poi,
-            total_pool:total_pool,            
             priority:priority,
             new_priority:new_priority,
-            //group_pool: poi_arr,
+            group_pool: poi_arr,
+            pool_total: pool.length,
             pool: pool
         });
       
