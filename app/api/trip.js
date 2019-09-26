@@ -64,7 +64,7 @@ module.exports = (app, db , current) => {
             var trip_days =  Math.floor(( Date.parse(trip_end) - Date.parse(trip_start) ) / 86400000) + 1;
 
             //Then calculate total pois of the pool
-            var total_pool = trip_days * 10;
+            var total_pool = trip_days * 15;
 
             //Get the priority of the categories
             /* Example of json format
@@ -77,7 +77,14 @@ module.exports = (app, db , current) => {
             }
             
             //Convert json string to json object
-            var priority = JSON.parse(priority);
+            try{
+                var priority = JSON.parse(priority);
+            } catch(e) {
+                res.json({
+                    result: "error",
+                    message: "Invalid format of priority, it should be a standard JSON format."
+                });
+            }
 
             var standard_categories = ["shopping","eating","relaxing","sightseeing","playing","going_out","discovering","hiking"];
             standard_categories.forEach(function(item,k){
@@ -138,6 +145,53 @@ module.exports = (app, db , current) => {
                     //poi_arr[p] = {poi: gp_cat[0]};
                 }
             }
+            
+            //Suffle the pool to ensure we can get the random POI
+            shuffle(pool);
+
+        /********* STEP3 - Start the itinerary generating process  *********/
+        
+            /*
+             * function generateSchedule
+                pool //not accept default
+
+                start_coordinate // city or airport coordinate/first poi coordinate 
+                end_coordinate // last poi coordinate
+
+                start_location //null/hotel_name/airport name
+                end_location   //null/hotel_name/airport name
+
+                start_time  // 9:00
+                end_time // 22:00
+             * 
+             */
+            var start_time = req.body.start_time;
+            if(typeof start_time == 'undefined'){
+                var start_time = "09:00";
+            }
+            var dayend_time = req.body.dayend_time;
+            if(typeof req.body.dayend_time == 'undefined'){
+                var dayend_time = "22:00";
+            }
+            var start_coordinate = req.body.start_point;
+            if(typeof start_coordinate == 'undefined'){
+                var start_coordinate = null;
+            }
+            var end_coordinate = req.body.end_point;
+            if(typeof end_coordinate == 'undefined'){
+                var end_coordinate = null;
+            }
+            var start_location = req.body.start_location;
+            if(typeof start_location == 'undefined'){
+                var start_location = null;
+            }
+            var end_location = req.body.end_location;
+            if(typeof end_location == 'undefined'){
+                var end_location = null;
+            }
+            
+            var schedule = getSchedule(pool,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location);
+        
 
             
 
@@ -153,9 +207,61 @@ module.exports = (app, db , current) => {
             new_priority:new_priority,
             group_pool: poi_arr,
             pool_total: pool.length,
-            pool: pool
+            //pool: pool,
+            schedule: schedule
         });
       
     });
 
+    function getSchedule(pool,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location){
+        var start_time_obj = new Date("01/01/2000 "+start_time);
+        var dayend_time_obj = new Date("01/01/2000 "+dayend_time);
+        var current_time = start_time_obj;
+        var schedule = [];
+
+
+        schedule.push({location: start_location, coordinate: start_coordinate});
+        //current_time = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
+        //console.log(current_time);
+
+        for (const index in pool) {
+            //console.log(index); //index number of the POI
+            //console.log(pool[index]['duration']); //POI information
+
+            if(current_time < dayend_time_obj){
+                //add to schedule, add time
+                //console.log(current_time);
+                //console.log(pool[index]['id']);
+                //console.log(schedule[index-1]);
+
+                var coordinate = pool[index]['location']['lat']+','+pool[index]['location']['lng'];
+                schedule.push({id: pool[index]['id'], location: pool[index]['name'], coordinate: coordinate});
+
+                //add POI duration to the current time
+                var new_mins = (pool[index]['duration'])/60;
+                current_time.setMinutes(current_time.getMinutes() + new_mins);
+
+                //add a reserved time as transport time
+                current_time.setMinutes(current_time.getMinutes() + 15);
+                current_time = new Date(current_time);
+                
+                //seetime = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
+                //console.log(seetime);
+            }
+
+        }
+        
+        return schedule;
+    }
+    
+    
+    function shuffle(a) {
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+    
+    
 };
