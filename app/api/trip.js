@@ -62,9 +62,14 @@ module.exports = (app, db , current) => {
             var trip_start = req.body.trip_start;
             var trip_end = req.body.trip_end;
             var trip_days =  Math.floor(( Date.parse(trip_end) - Date.parse(trip_start) ) / 86400000) + 1;
+            
+            //Get all date by the date period
+            var start = trip_start.split("-");
+            var end = trip_end.split("-");
+            var dates = getDates(new Date(parseInt(start[0]),parseInt(start[1]),parseInt(start[2])), new Date(parseInt(end[0]),parseInt(end[1]),parseInt(end[2])));     
 
             //Then calculate total pois of the pool
-            var total_pool = trip_days * 15;
+            var total_pool = trip_days * 13;
 
             //Get the priority of the categories
             /* Example of json format
@@ -183,16 +188,21 @@ module.exports = (app, db , current) => {
             }
             var start_location = req.body.start_location;
             if(typeof start_location == 'undefined'){
-                var start_location = null;
+                var start_location = "STARTING POINT";
             }
             var end_location = req.body.end_location;
             if(typeof end_location == 'undefined'){
                 var end_location = null;
             }
             
-            var schedule = getSchedule(pool,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location);
-        
-
+            //Generate itinerary process
+            dates = dates[0].split(",");
+            var theday = dates[0];
+            
+            //var schedule = [];
+            var schedule = getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location);
+            //schedule.push({day1: ccc});
+            //schedule.push({day2: ccc});
             
 
         res.json({
@@ -213,29 +223,29 @@ module.exports = (app, db , current) => {
       
     });
 
-    function getSchedule(pool,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location){
-        var start_time_obj = new Date("01/01/2000 "+start_time);
-        var dayend_time_obj = new Date("01/01/2000 "+dayend_time);
+    function getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location){
+        var start_time_obj = new Date(theday+" "+start_time);
+        var dayend_time_obj = new Date(theday+" "+dayend_time);
         var current_time = start_time_obj;
         var schedule = [];
-
-
-        schedule.push({location: start_location, coordinate: start_coordinate});
-        //current_time = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
-        //console.log(current_time);
+        starttime = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
+        
+        if(start_coordinate != null){
+            current_time.setMinutes(current_time.getMinutes() + 20);
+            current_time = new Date(current_time);
+            schedule.push({location: start_location, coordinate: start_coordinate, seetime:starttime});
+        }
 
         for (const index in pool) {
-            //console.log(index); //index number of the POI
-            //console.log(pool[index]['duration']); //POI information
 
             if(current_time < dayend_time_obj){
                 //add to schedule, add time
                 //console.log(current_time);
-                //console.log(pool[index]['id']);
-                //console.log(schedule[index-1]);
-
+                
+                //console.log(seetime);
+                seetime = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
                 var coordinate = pool[index]['location']['lat']+','+pool[index]['location']['lng'];
-                schedule.push({id: pool[index]['id'], location: pool[index]['name'], coordinate: coordinate});
+                schedule.push({id: pool[index]['id'], location: pool[index]['name'], coordinate: coordinate, seetime:seetime});
 
                 //add POI duration to the current time
                 var new_mins = (pool[index]['duration'])/60;
@@ -245,11 +255,12 @@ module.exports = (app, db , current) => {
                 current_time.setMinutes(current_time.getMinutes() + 15);
                 current_time = new Date(current_time);
                 
-                //seetime = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
-                //console.log(seetime);
             }
 
         }
+        
+        
+        
         
         return schedule;
     }
@@ -263,5 +274,20 @@ module.exports = (app, db , current) => {
         return a;
     }
     
+    
+    var getDates = function(startDate, endDate) {
+        var dates = [],
+            currentDate = startDate,
+            addDays = function(days) {
+              var date = new Date(this.valueOf());
+              date.setDate(date.getDate() + days);
+              return date;
+            };
+        while (currentDate <= endDate) {
+          dates.push(currentDate.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'}));
+          currentDate = addDays.call(currentDate, 1);
+        }
+        return dates;
+    };
     
 };
