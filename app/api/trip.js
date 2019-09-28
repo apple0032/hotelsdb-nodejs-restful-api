@@ -2,7 +2,7 @@ const Sequelize = require('sequelize');
 const request = require('request-promise-native');
 const Op = Sequelize.Op;
 const dummy_json = require('../../config/dummy.json');
-const key = require("../../config/api_config");
+const api_config = require("../../config/api_config");
 
 module.exports = (app, db , current) => {
   
@@ -39,7 +39,7 @@ module.exports = (app, db , current) => {
                 {
                     url: 'https://api.sygictravelapi.com/1.1/en/places/list?parents='+vcity.city_id+'&level=poi&limit='+sources_limit,
                     headers: {
-                        "x-api-key": key.sygic.api_key
+                        "x-api-key": api_config.key.sygic
                     }
                 }
             );
@@ -196,11 +196,15 @@ module.exports = (app, db , current) => {
             }
             
             //Generate itinerary process
+
+            //Get the exact day
             dates = dates[0].split(",");
             var theday = dates[0];
-            
+
+
+
             //var schedule = [];
-            var schedule = getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location);
+            var schedule = await getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location);
             //schedule.push({day1: ccc});
             //schedule.push({day2: ccc});
             
@@ -223,48 +227,78 @@ module.exports = (app, db , current) => {
       
     });
 
-    function getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location){
+    async function getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location){
+
+        //Init time object
         var start_time_obj = new Date(theday+" "+start_time);
         var dayend_time_obj = new Date(theday+" "+dayend_time);
-        var current_time = start_time_obj;
+        var current_time = start_time_obj; //The current time will keep updating start from start_time_obj
         var schedule = [];
-        starttime = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
-        
+        seetime = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
+
+        //Init variables
+        var matrix_string = '';
+        var new_pool = [];
+
+
+        //Check if the start point inputted
         if(start_coordinate != null){
-            current_time.setMinutes(current_time.getMinutes() + 20);
-            current_time = new Date(current_time);
-            schedule.push({location: start_location, coordinate: start_coordinate, seetime:starttime});
+            //current_time.setMinutes(current_time.getMinutes() + 20);
+            //current_time = new Date(current_time);
+            //schedule.push({location: start_location, coordinate: start_coordinate, seetime:seetime});
+            var sc = start_coordinate.split(",");
+            matrix_string += start_coordinate + "%7C";
+            new_pool.push({id: start_location, name:start_location, location: {lat:sc[0], lng: sc[1]}, duration: 0});
         }
 
-        for (const index in pool) {
+        //Select 10 POI randomly from the POOL
+        for (var i = 1; i < pool.length; i++) {
+            if(i < 10) {
+                var temp_string;
+                temp_string = (pool[i]['location']['lat']) + ',' + (pool[i]['location']['lng']);
+                matrix_string += temp_string + '%7C';
+                new_pool.push(pool[i]);
+            }
+        }
+
+
+        //Get distance matrix from GOOGLE API
+        // var matrix = await request.get(
+        //     {
+        //         url: 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&key='+api_config.key.google_distance_matrix+'&origins='+matrix_string+'&destinations='+matrix_string,
+        //     }
+        // );
+
+        console.log(matrix_string);
+
+
+        for (let index = 0; index < new_pool.length; index++) {
 
             if(current_time < dayend_time_obj){
                 //add to schedule, add time
                 //console.log(current_time);
-                
-                //console.log(seetime);
+
                 seetime = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
-                var coordinate = pool[index]['location']['lat']+','+pool[index]['location']['lng'];
-                schedule.push({id: pool[index]['id'], location: pool[index]['name'], coordinate: coordinate, seetime:seetime});
+                var coordinate = new_pool[index]['location']['lat']+','+new_pool[index]['location']['lng'];
+                schedule.push({id: new_pool[index]['id'], location: new_pool[index]['name'], coordinate: coordinate, seetime:seetime});
 
                 //add POI duration to the current time
-                var new_mins = (pool[index]['duration'])/60;
+                var new_mins = (new_pool[index]['duration'])/60;
                 current_time.setMinutes(current_time.getMinutes() + new_mins);
 
                 //add a reserved time as transport time
                 current_time.setMinutes(current_time.getMinutes() + 15);
                 current_time = new Date(current_time);
-                
-            }
 
+            }
         }
-        
-        
-        
-        
+
+
+
+
         return schedule;
     }
-    
+
     
     function shuffle(a) {
         for (let i = a.length - 1; i > 0; i--) {
