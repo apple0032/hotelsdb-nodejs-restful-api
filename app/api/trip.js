@@ -2,6 +2,8 @@ const Sequelize = require('sequelize');
 const request = require('request-promise-native');
 const Op = Sequelize.Op;
 const dummy_json = require('../../config/dummy.json');
+const dummy_pool = require('../../config/dummy_pool.json');
+const dummy_matrix = require('../../config/dummy_matrix.json');
 const api_config = require("../../config/api_config");
 
 module.exports = (app, db , current) => {
@@ -229,6 +231,12 @@ module.exports = (app, db , current) => {
 
     async function getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location){
 
+        //Create dummy pool to enhance development
+        var fake_pool = dummy_pool;
+        pool = fake_pool;
+        //console.log(fake_pool);
+
+
         //Init time object
         var start_time_obj = new Date(theday+" "+start_time);
         var dayend_time_obj = new Date(theday+" "+dayend_time);
@@ -251,9 +259,11 @@ module.exports = (app, db , current) => {
             new_pool.push({id: start_location, name:start_location, location: {lat:sc[0], lng: sc[1]}, duration: 0});
         }
 
+        //console.log(matrix_string);
+
         //Select 10 POI randomly from the POOL
-        for (var i = 1; i < pool.length; i++) {
-            if(i < 10) {
+        for (var i = 0; i < pool.length; i++) {
+            if(i < 9) {
                 var temp_string;
                 temp_string = (pool[i]['location']['lat']) + ',' + (pool[i]['location']['lng']);
                 matrix_string += temp_string + '%7C';
@@ -268,38 +278,93 @@ module.exports = (app, db , current) => {
         //         url: 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&key='+api_config.key.google_distance_matrix+'&origins='+matrix_string+'&destinations='+matrix_string,
         //     }
         // );
+        // matrix = JSON.parse(matrix);
 
-        console.log(matrix_string);
+        //Create dummy matrix to speed up development
+        var matrix = dummy_matrix;
+        //console.log(dummy_matrix);
+        //console.log(matrix_string);
 
 
-        for (let index = 0; index < new_pool.length; index++) {
 
+        //Handle the staring point
+        schedule.push({
+            id: new_pool[0]['id'],
+            location: new_pool[0]['name'],
+            coordinate: new_pool[0]['location']['lat']+','+new_pool[0]['location']['lng'],
+            duration:  new_pool[0]['duration'],
+            seetime:seetime
+        });
+        current_time.setMinutes(current_time.getMinutes() + (new_pool[0]['duration']/60) + 15);
+        current_time = new Date(current_time);
+
+
+
+        var martix_gp = [];  //Non-repeatable identifier array
+        var next_poi = 0;
+        for (let index = 0; index < new_pool.length-1; index++) {
+            //console.log(index);
             if(current_time < dayend_time_obj){
-                //add to schedule, add time
-                //console.log(current_time);
 
+                var matrix_ele = matrix['rows'][next_poi]['elements'];   //Get the matrix distance by the next_poi->this value keep update
+                var matrix_duration = [];
+                for (const el in matrix_ele) {  //Search for the nearest point where it is not itself and not go before
+                    if(el > 0) {
+                        if (matrix_ele[el]['duration']['value'] !== 0 && !martix_gp.includes(el)) {
+                            matrix_duration.push(matrix_ele[el]['duration']['value']);
+                        }
+                    }
+                }
+                var matrix_min = Math.min(...matrix_duration);  //Find the minimum duration time
+                for (const k in matrix_ele) {
+                    if(matrix_ele[k]['duration']['value'] === matrix_min) {   //Search in loop again, see which element will be next point
+                        next_poi = k;
+                        martix_gp.push(next_poi);
+                        schedule.push({type: "transport", duration: matrix_min, distance: matrix_ele[k]['distance']['value']});  //Push transport json
+
+                        current_time.setMinutes(current_time.getMinutes() + (matrix_min/60) + 15);  //Keep updating current time
+                        current_time = new Date(current_time);
+                    }
+                }
+
+                //console.log(next_poi);
+                //console.log(matrix_min);
+                //console.log(martix_gp);
+
+
+
+                //Push the next POI to schedule, keep updating current time
+                //console.log(current_time);
                 seetime = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
-                var coordinate = new_pool[index]['location']['lat']+','+new_pool[index]['location']['lng'];
-                schedule.push({id: new_pool[index]['id'], location: new_pool[index]['name'], coordinate: coordinate, seetime:seetime});
+                var coordinate = new_pool[next_poi]['location']['lat']+','+new_pool[next_poi]['location']['lng'];
+                schedule.push({id: new_pool[next_poi]['id'], location: new_pool[next_poi]['name'], coordinate: coordinate, duraion: new_pool[next_poi]['duration'], seetime:seetime});
 
                 //add POI duration to the current time
-                var new_mins = (new_pool[index]['duration'])/60;
+                var new_mins = (new_pool[next_poi]['duration'])/60;
                 current_time.setMinutes(current_time.getMinutes() + new_mins);
-
-                //add a reserved time as transport time
-                current_time.setMinutes(current_time.getMinutes() + 15);
                 current_time = new Date(current_time);
-
             }
         }
 
+
+        //Handle back to the end point
+        schedule.push({type: "transport", duration: 1800, distance: "unknown"});  //Push transport json
+
+        current_time.setMinutes(current_time.getMinutes() + 30);  //Keep updating current time
+        current_time = new Date(current_time);
+
+        seetime = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
+        schedule.push({
+            id: "END POINT",
+            seetime:seetime
+        });
 
 
 
         return schedule;
     }
 
-    
+
     function shuffle(a) {
         for (let i = a.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
