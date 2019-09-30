@@ -153,8 +153,6 @@ module.exports = (app, db , current) => {
                 }
             }
             
-            //Suffle the pool to ensure we can get the random POI
-            shuffle(pool);
 
         /********* STEP3 - Start the itinerary generating process  *********/
         
@@ -199,16 +197,37 @@ module.exports = (app, db , current) => {
             
             //Generate itinerary process
 
-            //Get the exact day
-            dates = dates[0].split(",");
-            var theday = dates[0];
+            //Create dummy pool to enhance development
+            var fake_pool = dummy_pool;
+            //pool = fake_pool;
+            
+            
+            
+            var schedule = [];
+            for (const eachday in dates) {
+                day = dates[eachday].split(",");
+                var theday = day[0]; //Get the exact day
 
-
-
-            //var schedule = [];
-            var schedule = await getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location);
-            //schedule.push({day1: ccc});
-            //schedule.push({day2: ccc});
+                var itinerary = await getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location);
+                itinerary_obj = {};
+                itinerary_obj[theday] = itinerary;
+                schedule.push(itinerary_obj);
+                
+                
+                //console.log(itinerary);
+                
+                //Remove POI from last pool
+                for (const k in itinerary) {
+                    if(itinerary[k].hasOwnProperty('poi_id')){
+                        console.log(itinerary[k]['poi_id']);
+                        
+                    }
+                }
+                console.log("-----------");
+                
+                //Suffle the pool to ensure we can get the random POI
+                shuffle(pool);
+            }
             
 
         res.json({
@@ -231,18 +250,13 @@ module.exports = (app, db , current) => {
 
     async function getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location){
 
-        //Create dummy pool to enhance development
-        var fake_pool = dummy_pool;
-        pool = fake_pool;
-        //console.log(fake_pool);
-
 
         //Init time object
         var start_time_obj = new Date(theday+" "+start_time);
         var dayend_time_obj = new Date(theday+" "+dayend_time);
         var current_time = start_time_obj; //The current time will keep updating start from start_time_obj
         var schedule = [];
-        seetime = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
+        seetime = convertDateFormat(current_time);
 
         //Init variables
         var matrix_string = '';
@@ -289,11 +303,13 @@ module.exports = (app, db , current) => {
 
         //Handle the staring point
         schedule.push({
-            id: new_pool[0]['id'],
+            type: "poi",
+            poi_id: new_pool[0]['id'],
             location: new_pool[0]['name'],
             coordinate: new_pool[0]['location']['lat']+','+new_pool[0]['location']['lng'],
             duration:  new_pool[0]['duration'],
-            seetime:seetime
+            schedule_time:seetime,
+            //source: new_pool[0]
         });
         current_time.setMinutes(current_time.getMinutes() + (new_pool[0]['duration']/60) + 15);
         current_time = new Date(current_time);
@@ -322,8 +338,7 @@ module.exports = (app, db , current) => {
                         martix_gp.push(next_poi);
                         schedule.push({type: "transport", duration: matrix_min, distance: matrix_ele[k]['distance']['value']});  //Push transport json
 
-                        current_time.setMinutes(current_time.getMinutes() + (matrix_min/60) + 15);  //Keep updating current time
-                        current_time = new Date(current_time);
+                        current_time = adjustCurrentTime(current_time, ((matrix_min/60) + 15)); //Keep updating current time
                     }
                 }
 
@@ -335,35 +350,58 @@ module.exports = (app, db , current) => {
 
                 //Push the next POI to schedule, keep updating current time
                 //console.log(current_time);
-                seetime = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
+                seetime = convertDateFormat(current_time);
                 var coordinate = new_pool[next_poi]['location']['lat']+','+new_pool[next_poi]['location']['lng'];
-                schedule.push({id: new_pool[next_poi]['id'], location: new_pool[next_poi]['name'], coordinate: coordinate, duraion: new_pool[next_poi]['duration'], seetime:seetime});
+                schedule.push({
+                    type: "poi",
+                    poi_id: new_pool[next_poi]['id'], 
+                    location: new_pool[next_poi]['name'], 
+                    coordinate: coordinate, 
+                    duraion: new_pool[next_poi]['duration'], 
+                    schedule_time:seetime,
+                    //source: new_pool[next_poi]
+                });
 
                 //add POI duration to the current time
                 var new_mins = (new_pool[next_poi]['duration'])/60;
-                current_time.setMinutes(current_time.getMinutes() + new_mins);
-                current_time = new Date(current_time);
+                current_time = adjustCurrentTime(current_time, new_mins);
             }
         }
 
 
         //Handle back to the end point
-        schedule.push({type: "transport", duration: 1800, distance: "unknown"});  //Push transport json
+        if(end_coordinate != null){
+            schedule.push({type: "transport", duration: 1800, distance: null});  //Push transport json
 
-        current_time.setMinutes(current_time.getMinutes() + 30);  //Keep updating current time
-        current_time = new Date(current_time);
+            current_time = adjustCurrentTime(current_time,30); //Keep updating current time
 
-        seetime = current_time.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong'});
-        schedule.push({
-            id: "END POINT",
-            seetime:seetime
-        });
-
-
+            seetime = convertDateFormat(current_time);
+            var sc = end_coordinate.split(",");
+            schedule.push({
+                type: "poi",
+                poi_id: end_location,
+                location: end_location,
+                coordinate: sc[0]+','+sc[1],
+                duration:  0,
+                schedule_time:seetime,
+                source: null
+            });
+        }
 
         return schedule;
     }
-
+    
+    function adjustCurrentTime(current_time, minutes){
+        current_time.setMinutes(current_time.getMinutes() + minutes);
+        current_time = new Date(current_time);
+        
+        return current_time;
+    }
+    
+    function convertDateFormat(date){
+        date = date.toLocaleString('en-US', {timeZone: 'Asia/Hong_Kong',hour12:false});
+        return date;
+    }
 
     function shuffle(a) {
         for (let i = a.length - 1; i > 0; i--) {
