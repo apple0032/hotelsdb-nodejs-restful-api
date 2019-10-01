@@ -121,38 +121,57 @@ module.exports = (app, db , current) => {
                     var category = all_pois[apoi].categories;
                     if(category.includes(p)){
                         thecategory.push(all_pois[apoi]);
-                        all_pois.splice(apoi, 1)
+                        all_pois.splice(apoi, 1);
                         group_pool[p] = {poi: thecategory};
                     }
                 }
             }
 
             //Filter the random POIs according to the category abstract number
+            var hottest = req.body.hottest;
             var poi_arr = {};
             var pool = [];
-            for (var p in priority) {
-                var poigp = [];
-                if(group_pool.hasOwnProperty(p)){
-                    var gp_cat = group_pool[p]['poi']; //Category array pool
-                    
-                    for (var i = 0; i < (gp_cat.length)+2; i++) {
-                        //new_priority[p]['abstract']
-                        //console.log(poigp.length);
-                        if(poigp.length < new_priority[p]['abstract']){
-                            var n = Math.floor(Math.random() * gp_cat.length);
-                            var rand = gp_cat[n];
-                            poigp.push(rand);
-                            pool.push(rand);
-                            poi_arr[p] = {total: poigp.length};
-                            //poi_arr[p] = {total: poigp.length, poi: poigp};
-                            gp_cat.splice(n, 1);
+
+            //Select poi randomly
+            if(typeof hottest == 'undefined'){
+                for (var p in priority) {
+                    var poigp = [];
+                    if (group_pool.hasOwnProperty(p)) {
+                        var gp_cat = group_pool[p]['poi']; //Category array pool
+
+                        for (var i = 0; i < (gp_cat.length) + 2; i++) {
+                            //new_priority[p]['abstract']
+                            //console.log(poigp.length);
+                            if (poigp.length < new_priority[p]['abstract']) {
+                                var n = Math.floor(Math.random() * gp_cat.length);
+                                var rand = gp_cat[n];
+                                poigp.push(rand);
+                                pool.push(rand);
+                                poi_arr[p] = {total: poigp.length};
+                                //poi_arr[p] = {total: poigp.length, poi: poigp};
+                                gp_cat.splice(n, 1);
+                            }
+                        }
+                        //console.log(gp_cat.length);
+                        //poi_arr[p] = {poi: gp_cat[0]};
+                    }
+                }
+            } else if (hottest === "1" || hottest === 'true') {  //Select poi according to the rating
+                for (var p in priority) {
+                    var poigp = [];
+                    if (group_pool.hasOwnProperty(p)) {
+                        var gp_cat = group_pool[p]['poi'];
+                        for (var i = 0; i < (gp_cat.length); i++) {
+                            if (poigp.length < new_priority[p]['abstract']) {
+                                poigp.push(gp_cat[i]);
+                                pool.push(gp_cat[i]);
+                                poi_arr[p] = {total: poigp.length};
+                            }
                         }
                     }
-                    //console.log(gp_cat.length);
-                    //poi_arr[p] = {poi: gp_cat[0]};
                 }
             }
-            
+
 
         /********* STEP3 - Start the itinerary generating process  *********/
         
@@ -217,18 +236,29 @@ module.exports = (app, db , current) => {
                 //console.log(itinerary);
                 
                 //Remove POI from last pool
+                let selected_poi = [];
                 for (const k in itinerary) {
                     if(itinerary[k].hasOwnProperty('poi_id')){
-                        console.log(itinerary[k]['poi_id']);
-                        
+                        selected_poi.push(itinerary[k]['poi_id']);
                     }
                 }
-                console.log("-----------");
-                
+
+                let new_pool = [];
+                for (const index in pool) {
+                    if(!selected_poi.includes(pool[index]['id'])){
+                        new_pool.push(pool[index]);
+                    }
+                }
+                pool = new_pool; //Create a new pool
+
                 //Suffle the pool to ensure we can get the random POI
-                shuffle(pool);
+
+                if(typeof hottest === 'undefined') {
+                    shuffle(pool);
+                }
             }
-            
+
+
 
         res.json({
             result: "success",
