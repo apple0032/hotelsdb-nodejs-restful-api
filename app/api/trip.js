@@ -68,10 +68,17 @@ module.exports = (app, db , current) => {
             //Get all date by the date period
             var start = trip_start.split("-");
             var end = trip_end.split("-");
-            var dates = getDates(new Date(parseInt(start[0]),parseInt(start[1]),parseInt(start[2])), new Date(parseInt(end[0]),parseInt(end[1]),parseInt(end[2])));     
+
+            var datelist = getDaysArray(new Date(start),new Date(end));
+            var dates = [];
+            for (var date of datelist) {
+                date = date.toLocaleString('en-GB', {timeZone: 'Asia/Hong_Kong'});
+                thedate = date.split(',');
+                dates.push(thedate[0]);
+            }
 
             //Then calculate total pois of the pool
-            var total_pool = trip_days * 13;
+            var total_pool = trip_days * 15;
 
             //Get the priority of the categories
             /* Example of json format
@@ -219,10 +226,11 @@ module.exports = (app, db , current) => {
             //Create dummy pool to enhance development
             var fake_pool = dummy_pool;
             //pool = fake_pool;
-            
+            pool_total = pool.length;
             
             
             var schedule = [];
+            var itinerary_pois = [];
             for (const eachday in dates) {
                 day = dates[eachday].split(",");
                 var theday = day[0]; //Get the exact day
@@ -240,6 +248,10 @@ module.exports = (app, db , current) => {
                 for (const k in itinerary) {
                     if(itinerary[k].hasOwnProperty('poi_id')){
                         selected_poi.push(itinerary[k]['poi_id']);
+                    }
+                    
+                    if(itinerary[k]['poi_id'] != null){
+                        itinerary_pois.push(itinerary[k]['poi_id']);
                     }
                 }
 
@@ -259,6 +271,42 @@ module.exports = (app, db , current) => {
             }
 
 
+        /********* STEP4 - Search for the details and media from the itinerary's POI by Sygic API*********/
+        
+        /* Testing for further development
+         * 
+        avg_itinerary_pois = itinerary_pois.length/64;
+        //console.log(avg_itinerary_pois);
+        
+        var places_list = [];
+        var n = 63;
+        var z = n;
+        var x = 0;
+        
+        for (var i = 0; i < (avg_itinerary_pois); i++) {
+            //console.log("x : "+x);
+            //console.log("n : "+z);
+            var place_str = '';
+            for (const po in itinerary_pois) {
+                if(po >= x && po <= z ){
+                    //console.log(itinerary_pois[po]);
+                    place_str = place_str+itinerary_pois[po]+'%7C';
+                }
+            };
+            
+            places_list.push(place_str);
+            
+            x = (i+1)*n + (i+1);
+            z = (i+2)*n + (i+1);
+        }
+        
+        
+        for (const li in places_list) {
+            console.log(places_list[li]);
+        }
+        */
+        
+        
 
         res.json({
             result: "success",
@@ -271,9 +319,11 @@ module.exports = (app, db , current) => {
             priority:priority,
             new_priority:new_priority,
             group_pool: poi_arr,
-            pool_total: pool.length,
+            pool_total: pool_total,
             //pool: pool,
-            schedule: schedule
+            schedule: schedule,
+            total_itinerary_pois: itinerary_pois.length,
+            itinerary_pois: itinerary_pois
         });
       
     });
@@ -457,4 +507,12 @@ module.exports = (app, db , current) => {
         return dates;
     };
     
+    
+    var getDaysArray = function(start, end) {
+        for(var arr=[],dt=start; dt<=end; dt.setDate(dt.getDate()+1)){
+            arr.push(new Date(dt));
+        }
+        return arr;
+    };
+
 };
