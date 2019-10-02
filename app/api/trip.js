@@ -311,6 +311,7 @@ module.exports = (app, db , current) => {
         res.json({
             result: "success",
             city: vcity.city_id,
+            city_name: city,
             trip_start: trip_start,
             trip_end: trip_end,
             trip_days: trip_days,
@@ -389,6 +390,8 @@ module.exports = (app, db , current) => {
             coordinate: new_pool[0]['location']['lat']+','+new_pool[0]['location']['lng'],
             duration:  new_pool[0]['duration'],
             schedule_time:seetime,
+            perex: new_pool[0]['perex'], 
+            thumbnail_url: new_pool[0]['thumbnail_url']
             //source: new_pool[0]
         });
         current_time.setMinutes(current_time.getMinutes() + (new_pool[0]['duration']/60) + 15);
@@ -439,6 +442,8 @@ module.exports = (app, db , current) => {
                     coordinate: coordinate, 
                     duraion: new_pool[next_poi]['duration'], 
                     schedule_time:seetime,
+                    perex: new_pool[next_poi]['perex'], 
+                    thumbnail_url: new_pool[next_poi]['thumbnail_url']
                     //source: new_pool[next_poi]
                 });
 
@@ -463,8 +468,7 @@ module.exports = (app, db , current) => {
                 location: end_location,
                 coordinate: sc[0]+','+sc[1],
                 duration:  0,
-                schedule_time:seetime,
-                source: null
+                schedule_time:seetime
             });
         }
 
