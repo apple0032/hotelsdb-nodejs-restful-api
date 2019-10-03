@@ -324,7 +324,8 @@ module.exports = (app, db , current) => {
             //pool: pool,
             schedule: schedule,
             total_itinerary_pois: itinerary_pois.length,
-            itinerary_pois: itinerary_pois
+            itinerary_pois: itinerary_pois,
+            dates:dates
         });
       
     });
@@ -440,7 +441,7 @@ module.exports = (app, db , current) => {
                     poi_id: new_pool[next_poi]['id'], 
                     location: new_pool[next_poi]['name'], 
                     coordinate: coordinate, 
-                    duraion: new_pool[next_poi]['duration'], 
+                    duration: new_pool[next_poi]['duration'], 
                     schedule_time:seetime,
                     perex: new_pool[next_poi]['perex'], 
                     thumbnail_url: new_pool[next_poi]['thumbnail_url']
