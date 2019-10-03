@@ -395,9 +395,7 @@ module.exports = (app, db , current) => {
             thumbnail_url: new_pool[0]['thumbnail_url']
             //source: new_pool[0]
         });
-        current_time.setMinutes(current_time.getMinutes() + (new_pool[0]['duration']/60) + 15);
-        current_time = new Date(current_time);
-
+        current_time = adjustCurrentTime(current_time, (new_pool[0]['duration']/60));
 
 
         var martix_gp = [];  //Non-repeatable identifier array
@@ -422,7 +420,7 @@ module.exports = (app, db , current) => {
                         martix_gp.push(next_poi);
                         schedule.push({type: "transport", duration: matrix_min, distance: matrix_ele[k]['distance']['value']});  //Push transport json
 
-                        current_time = adjustCurrentTime(current_time, ((matrix_min/60) + 15)); //Keep updating current time
+                        current_time = adjustCurrentTime(current_time, ((matrix_min/60))); //Keep updating current time
                     }
                 }
 
