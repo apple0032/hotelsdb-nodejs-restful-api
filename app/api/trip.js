@@ -36,7 +36,7 @@ module.exports = (app, db , current) => {
 
 
             //Executing sygic API to get all POIs
-               //currently disable to speed up development
+            /*   //currently disable to speed up development
             var pois = await request.get(
                 {
                     url: 'https://api.sygictravelapi.com/1.1/en/places/list?parents='+vcity.city_id+'&level=poi&limit='+sources_limit,
@@ -45,8 +45,8 @@ module.exports = (app, db , current) => {
                     }
                 }
             );
-
-            //pois = JSON.stringify(dummy_json); //hard code dummy json data to speed up development, disable in production
+            */
+            pois = JSON.stringify(dummy_json); //hard code dummy json data to speed up development, disable in production
 
             var all_pois = JSON.parse(pois);
             all_pois = all_pois['data']['places'];
@@ -220,6 +220,10 @@ module.exports = (app, db , current) => {
             if(typeof end_location == 'undefined'){
                 var end_location = null;
             }
+            var related_flight_id = req.body.related_flight_id;
+            if(typeof related_flight_id == 'undefined'){
+                var related_flight_id = null;
+            }
             
             //Generate itinerary process
 
@@ -325,7 +329,8 @@ module.exports = (app, db , current) => {
             schedule: schedule,
             total_itinerary_pois: itinerary_pois.length,
             itinerary_pois: itinerary_pois,
-            dates:dates
+            dates:dates,
+            related_flight_id: related_flight_id
         });
       
     });
