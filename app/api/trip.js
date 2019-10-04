@@ -36,7 +36,7 @@ module.exports = (app, db , current) => {
 
 
             //Executing sygic API to get all POIs
-            /*   //currently disable to speed up development
+               //currently disable to speed up development
             var pois = await request.get(
                 {
                     url: 'https://api.sygictravelapi.com/1.1/en/places/list?parents='+vcity.city_id+'&level=poi&limit='+sources_limit,
@@ -45,8 +45,8 @@ module.exports = (app, db , current) => {
                     }
                 }
             );
-            */
-            pois = JSON.stringify(dummy_json); //hard code dummy json data to speed up development, disable in production
+
+            //pois = JSON.stringify(dummy_json); //hard code dummy json data to speed up development, disable in production
 
             var all_pois = JSON.parse(pois);
             all_pois = all_pois['data']['places'];
@@ -351,8 +351,24 @@ module.exports = (app, db , current) => {
             //current_time = new Date(current_time);
             //schedule.push({location: start_location, coordinate: start_coordinate, seetime:seetime});
             var sc = start_coordinate.split(",");
-            matrix_string += start_coordinate + "%7C";
-            new_pool.push({id: start_location, name:start_location, location: {lat:sc[0], lng: sc[1]}, duration: 0});
+            //matrix_string += start_coordinate + "%7C";
+            schedule.push({
+                type: start_location,
+                poi_id: start_location,
+                location:start_location,
+                coordinate: sc[0]+','+sc[1],
+                duration: 0,
+                rating : 0,
+                schedule_time: theday+', '+start_time+':00',
+                perex: "Starting",
+                thumbnail_url: ""
+            });
+
+            schedule.push({
+                type: "transport",
+                duration: 0,
+                distance: 0
+            });
         }
 
         //console.log(matrix_string);
@@ -369,27 +385,28 @@ module.exports = (app, db , current) => {
 
 
         //Get distance matrix from GOOGLE API
-        // var matrix = await request.get(
-        //     {
-        //         url: 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&key='+api_config.key.google_distance_matrix+'&origins='+matrix_string+'&destinations='+matrix_string,
-        //     }
-        // );
-        // matrix = JSON.parse(matrix);
+        var matrix = await request.get(
+            {
+                url: 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&key='+api_config.key.google_distance_matrix+'&origins='+matrix_string+'&destinations='+matrix_string,
+            }
+        );
+        matrix = JSON.parse(matrix);
 
         //Create dummy matrix to speed up development
-        var matrix = dummy_matrix;
+        //var matrix = dummy_matrix;
         //console.log(dummy_matrix);
         //console.log(matrix_string);
 
-
+        if(new_pool[0]['id'] === "hotel"){ var type = "hotel";} else {var type = "poi";}
 
         //Handle the staring point
         schedule.push({
-            type: "poi",
+            type: type,
             poi_id: new_pool[0]['id'],
             location: new_pool[0]['name'],
             coordinate: new_pool[0]['location']['lat']+','+new_pool[0]['location']['lng'],
             duration:  new_pool[0]['duration'],
+            rating: new_pool[0]['rating'],
             schedule_time:seetime,
             perex: new_pool[0]['perex'], 
             thumbnail_url: new_pool[0]['thumbnail_url']
@@ -436,18 +453,19 @@ module.exports = (app, db , current) => {
                 var coordinate = new_pool[next_poi]['location']['lat']+','+new_pool[next_poi]['location']['lng'];
                 schedule.push({
                     type: "poi",
-                    poi_id: new_pool[next_poi]['id'], 
-                    location: new_pool[next_poi]['name'], 
-                    coordinate: coordinate, 
-                    duration: new_pool[next_poi]['duration'], 
+                    poi_id: new_pool[next_poi]['id'],
+                    location: new_pool[next_poi]['name'],
+                    coordinate: coordinate,
+                    duration: (new_pool[next_poi]['duration']) + 1800,
+                    rating: new_pool[next_poi]['rating'],
                     schedule_time:seetime,
-                    perex: new_pool[next_poi]['perex'], 
+                    perex: new_pool[next_poi]['perex'],
                     thumbnail_url: new_pool[next_poi]['thumbnail_url']
                     //source: new_pool[next_poi]
                 });
 
                 //add POI duration to the current time
-                var new_mins = (new_pool[next_poi]['duration'])/60;
+                var new_mins = ((new_pool[next_poi]['duration'])/60) + 30;
                 current_time = adjustCurrentTime(current_time, new_mins);
             }
         }
@@ -455,20 +473,65 @@ module.exports = (app, db , current) => {
 
         //Handle back to the end point
         if(end_coordinate != null){
-            schedule.push({type: "transport", duration: 1800, distance: null});  //Push transport json
 
-            current_time = adjustCurrentTime(current_time,30); //Keep updating current time
+            var url = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&key='+api_config.key.google_distance_matrix+'&origins='+schedule[schedule.length - 1]['coordinate']+'&destinations='+end_coordinate;
+            var matrix = await request.get({url: url});
 
+            matrix = JSON.parse(matrix);
+            var ele = matrix['rows'][0]['elements'][0];
+
+            if(ele['status'] === "OK") {
+                var st_distance = ele['distance']['value'];
+                var st_duration = ele['duration']['value'];
+
+                schedule.push({type: "transport", duration: st_duration, distance: st_distance});  //Push transport json
+
+            } else {
+                schedule.push({type: "transport", duration: 0, distance: 0});
+            }
+
+            current_time = adjustCurrentTime(current_time,30);
             seetime = convertDateFormat(current_time);
+
+            if(end_location === "hotel"){ var type = "hotel";} else {var type = "poi";}
+
             var sc = end_coordinate.split(",");
             schedule.push({
-                type: "poi",
+                type: type,
                 poi_id: end_location,
                 location: end_location,
                 coordinate: sc[0]+','+sc[1],
                 duration:  0,
-                schedule_time:seetime
+                rating: 0,
+                schedule_time:seetime,
+                perex: "Ending",
+                thumbnail_url: null
             });
+        }
+
+
+        if(start_coordinate !== null){
+            var url = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&key='+api_config.key.google_distance_matrix+'&origins='+schedule[0]['coordinate']+'&destinations='+schedule[2]['coordinate'];
+            var matrix = await request.get({url: url});
+
+            matrix = JSON.parse(matrix);
+            var ele = matrix['rows'][0]['elements'][0];
+
+            if(ele['status'] === "OK") {
+                var st_distance = ele['distance']['value'];
+                var st_duration = ele['duration']['value'];
+                schedule[1]['duration'] = st_duration;
+                schedule[1]['distance'] = st_distance;
+
+                for (const sc in schedule) {
+                    if(sc > 1 && schedule[sc]['type'] === "poi") {
+                        var time = new Date(schedule[sc]['schedule_time']);
+                        time = adjustCurrentTime(time, st_duration/60);
+                        time = convertDateFormat(time);
+                        schedule[sc]['schedule_time'] = time;
+                    }
+                }
+            }
         }
 
         return schedule;
