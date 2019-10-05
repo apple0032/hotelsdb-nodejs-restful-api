@@ -4,6 +4,7 @@ const Op = Sequelize.Op;
 const dummy_json = require('../../config/dummy.json');
 const dummy_pool = require('../../config/dummy_pool.json');
 const dummy_matrix = require('../../config/dummy_matrix.json');
+const dummy_pois = require('../../config/dummy_pois.json');
 const api_config = require("../../config/api_config");
 
 module.exports = (app, db , current) => {
@@ -277,38 +278,7 @@ module.exports = (app, db , current) => {
 
         /********* STEP4 - Search for the details and media from the itinerary's POI by Sygic API*********/
         
-        /* Testing for further development
-         * 
-        avg_itinerary_pois = itinerary_pois.length/64;
-        //console.log(avg_itinerary_pois);
-        
-        var places_list = [];
-        var n = 63;
-        var z = n;
-        var x = 0;
-        
-        for (var i = 0; i < (avg_itinerary_pois); i++) {
-            //console.log("x : "+x);
-            //console.log("n : "+z);
-            var place_str = '';
-            for (const po in itinerary_pois) {
-                if(po >= x && po <= z ){
-                    //console.log(itinerary_pois[po]);
-                    place_str = place_str+itinerary_pois[po]+'%7C';
-                }
-            };
-            
-            places_list.push(place_str);
-            
-            x = (i+1)*n + (i+1);
-            z = (i+2)*n + (i+1);
-        }
-        
-        
-        for (const li in places_list) {
-            console.log(places_list[li]);
-        }
-        */
+        //Moved to pois API
         
         
 
@@ -585,5 +555,83 @@ module.exports = (app, db , current) => {
         }
         return arr;
     };
+
+    app.post( "/pois", async(req, res) => {
+
+        var itinerary_pois = req.body.pois;
+        if(typeof itinerary_pois == 'undefined'){
+            res.json({
+                result: "error",
+                message: "Sorry, pois not found."
+            });
+        }
+
+        itinerary_pois = JSON.parse(itinerary_pois);
+        avg_itinerary_pois = itinerary_pois.length/64;
+
+        var places_list = [];
+        var n = 63;
+        var z = n;
+        var x = 0;
+
+        for (var i = 0; i < (avg_itinerary_pois); i++) {
+            //console.log("x : "+x);
+            //console.log("n : "+z);
+            var place_str = '';
+            for (const po in itinerary_pois) {
+                if(po >= x && po <= z ){
+                    //console.log(itinerary_pois[po]);
+                    place_str = place_str+itinerary_pois[po]+'%7C';
+                }
+            }
+
+            places_list.push(place_str);
+
+            x = (i+1)*n + (i+1);
+            z = (i+2)*n + (i+1);
+        }
+
+        res.json({
+            result: "success",
+            places_list: places_list
+        });
+
+    });
+
+    app.post( "/pois-info", async(req, res) => {
+
+        var pois = req.body.pois;
+        if(typeof pois == 'undefined'){
+            res.json({
+                result: "error",
+                message: "Sorry, pois not found."
+            });
+        }
+
+        let details;
+        // details = await request.get(
+        //     {
+        //         url: 'https://api.sygictravelapi.com/1.1/en/places?ids='+pois,
+        //         headers: {
+        //             "x-api-key": api_config.key.sygic
+        //         }
+        //     }
+        // );
+        //details = JSON.parse(details);
+
+        details = dummy_pois;
+
+        var places = details['data']['places'];
+
+        var group = {};
+        for (const i in places) {
+            group[places[i]['id']] = places[i];
+        }
+
+        res.json({
+            result: "success",
+            details: group
+        });
+    });
 
 };
