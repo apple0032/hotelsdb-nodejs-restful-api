@@ -38,16 +38,16 @@ module.exports = (app, db , current) => {
 
             //Executing sygic API to get all POIs
                //currently disable to speed up development
-            var pois = await request.get(
-                {
-                    url: 'https://api.sygictravelapi.com/1.1/en/places/list?parents='+vcity.city_id+'&level=poi&limit='+sources_limit,
-                    headers: {
-                        "x-api-key": api_config.key.sygic
-                    }
-                }
-            );
+//            var pois = await request.get(
+//                {
+//                    url: 'https://api.sygictravelapi.com/1.1/en/places/list?parents='+vcity.city_id+'&level=poi&limit='+sources_limit,
+//                    headers: {
+//                        "x-api-key": api_config.key.sygic
+//                    }
+//                }
+//            );
 
-            //pois = JSON.stringify(dummy_json); //hard code dummy json data to speed up development, disable in production
+            pois = JSON.stringify(dummy_json); //hard code dummy json data to speed up development, disable in production
 
             var all_pois = JSON.parse(pois);
             all_pois = all_pois['data']['places'];
@@ -609,17 +609,17 @@ module.exports = (app, db , current) => {
         }
 
         let details;
-        details = await request.get(
-            {
-                url: 'https://api.sygictravelapi.com/1.1/en/places?ids='+pois,
-                headers: {
-                    "x-api-key": api_config.key.sygic
-                }
-            }
-        );
-        details = JSON.parse(details);
+//        details = await request.get(
+//            {
+//                url: 'https://api.sygictravelapi.com/1.1/en/places?ids='+pois,
+//                headers: {
+//                    "x-api-key": api_config.key.sygic
+//                }
+//            }
+//        );
+//        details = JSON.parse(details);
 
-        //details = dummy_pois;
+        details = dummy_pois;
 
         var places = details['data']['places'];
 
@@ -634,4 +634,75 @@ module.exports = (app, db , current) => {
         });
     });
 
+
+    app.post( "/trip-update", async(req, res) => {
+        
+        var theday = req.body.date;
+        var pois = req.body.pois;
+        pois = JSON.parse(pois);
+        /*
+        {
+            "pois": [
+                        {
+                           "poi":"26611751",
+                           "duration" : "1800",
+                           "schedule_time" : "10:00:00"
+                        },
+                        {
+                           "poi":"19859",
+                           "duration" : "1800",
+                           "schedule_time" : "11:00:00"
+                        },
+
+                        {
+                           "poi":"59297",
+                           "duration" : "1800",
+                           "schedule_time" : "11:30:00"
+                        },
+                        {
+                           "poi":"10536422",
+                           "duration" : "1800",
+                           "schedule_time" : "12:30:00"
+                        },
+                        {
+                           "poi":"50936",
+                           "duration" : "1800",
+                           "schedule_time" : "13:30:00"
+                        },
+                        {
+                           "poi":"17766238",
+                           "duration" : "1800",
+                           "schedule_time" : "14:00:00"
+                        },
+                        {
+                           "poi":"5538146",
+                           "duration" : "1800",
+                           "schedule_time" : "14:30:00"
+                        },
+                        {
+                           "poi":"19925",
+                           "duration" : "1800",
+                           "schedule_time" : "15:00:00"
+                        },
+                        {
+                           "poi":"25307973",
+                           "duration" : "1800",
+                           "schedule_time" : "16:30:00"
+                        },
+                        {
+                           "poi":"19832",
+                           "duration" : "1800",
+                           "schedule_time" : "18:00:00"
+                        }
+                    ]
+        }
+         */
+        
+        res.json({
+            result: "success",
+            theday: theday,
+            schedule: pois
+        });
+    });
+    
 };
