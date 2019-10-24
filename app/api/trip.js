@@ -6,6 +6,7 @@ const dummy_pool = require('../../config/dummy_pool.json');
 const dummy_matrix = require('../../config/dummy_matrix.json');
 const dummy_pois = require('../../config/dummy_pois.json');
 const api_config = require("../../config/api_config");
+const sysconfig    = require(__dirname + '/../../config/config.json')['development'];
 
 module.exports = (app, db , current) => {
   
@@ -38,16 +39,18 @@ module.exports = (app, db , current) => {
 
             //Executing sygic API to get all POIs
                //currently disable to speed up development
-//            var pois = await request.get(
-//                {
-//                    url: 'https://api.sygictravelapi.com/1.1/en/places/list?parents='+vcity.city_id+'&level=poi&limit='+sources_limit,
-//                    headers: {
-//                        "x-api-key": api_config.key.sygic
-//                    }
-//                }
-//            );
-
+        if(sysconfig.sygic) {
+           var pois = await request.get(
+               {
+                   url: 'https://api.sygictravelapi.com/1.1/en/places/list?parents='+vcity.city_id+'&level=poi&limit='+sources_limit,
+                   headers: {
+                       "x-api-key": api_config.key.sygic
+                   }
+               }
+           );
+        } else {
             pois = JSON.stringify(dummy_json); //hard code dummy json data to speed up development, disable in production
+        }
 
             var all_pois = JSON.parse(pois);
             all_pois = all_pois['data']['places'];
@@ -360,15 +363,17 @@ module.exports = (app, db , current) => {
 
 
         //Get distance matrix from GOOGLE API
-        // var matrix = await request.get(
-        //     {
-        //         url: 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&key='+api_config.key.google_distance_matrix+'&origins='+matrix_string+'&destinations='+matrix_string,
-        //     }
-        // );
-        // matrix = JSON.parse(matrix);
-
-        //Create dummy matrix to speed up development
-        var matrix = dummy_matrix;
+        if(sysconfig.google) {
+            var matrix = await request.get(
+                {
+                    url: 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&key=' + api_config.key.google_distance_matrix + '&origins=' + matrix_string + '&destinations=' + matrix_string,
+                }
+            );
+            matrix = JSON.parse(matrix);
+        } else {
+            //Create dummy matrix to speed up development
+            var matrix = dummy_matrix;
+        }
         //console.log(dummy_matrix);
         //console.log(matrix_string);
 
@@ -448,11 +453,12 @@ module.exports = (app, db , current) => {
 
         //Handle back to the end point
         if(end_coordinate != null){
+            if(sysconfig.google) {
+                var url = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&key='+api_config.key.google_distance_matrix+'&origins='+schedule[schedule.length - 1]['coordinate']+'&destinations='+end_coordinate;
+                var matrix = await request.get({url: url});
 
-            // var url = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&key='+api_config.key.google_distance_matrix+'&origins='+schedule[schedule.length - 1]['coordinate']+'&destinations='+end_coordinate;
-            // var matrix = await request.get({url: url});
-            //
-            // matrix = JSON.parse(matrix);
+                matrix = JSON.parse(matrix);
+            }
             var ele = matrix['rows'][0]['elements'][0];
 
             if(ele['status'] === "OK") {
@@ -486,10 +492,12 @@ module.exports = (app, db , current) => {
 
 
         if(start_coordinate !== null){
-            // var url = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&key='+api_config.key.google_distance_matrix+'&origins='+schedule[0]['coordinate']+'&destinations='+schedule[2]['coordinate'];
-            // var matrix = await request.get({url: url});
-            //
-            // matrix = JSON.parse(matrix);
+            if(sysconfig.google) {
+                var url = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&key=' + api_config.key.google_distance_matrix + '&origins=' + schedule[0]['coordinate'] + '&destinations=' + schedule[2]['coordinate'];
+                var matrix = await request.get({url: url});
+
+                matrix = JSON.parse(matrix);
+            }
             var ele = matrix['rows'][0]['elements'][0];
 
             if(ele['status'] === "OK") {
@@ -558,7 +566,7 @@ module.exports = (app, db , current) => {
 
     app.post( "/pois", async(req, res) => {
 
-        var itinerary_pois = req.body.pois;
+        var itinerary_pois = req.body.pois;  //["poi:50762","poi:19886","poi:19853","poi:19820","poi:19850","poi:19849","poi:19822"]
         if(typeof itinerary_pois == 'undefined'){
             res.json({
                 result: "error",
@@ -600,7 +608,7 @@ module.exports = (app, db , current) => {
 
     app.post( "/pois-info", async(req, res) => {
 
-        var pois = req.body.pois;
+        var pois = req.body.pois;  //poi:50762%7Cpoi:19886%7Cpoi:19853%7Cpoi:19820%7Cpoi:19850%7Cpoi:19849%7Cpoi:19822%7C
         if(typeof pois == 'undefined'){
             res.json({
                 result: "error",
@@ -608,18 +616,31 @@ module.exports = (app, db , current) => {
             });
         }
 
-        let details;
-//        details = await request.get(
-//            {
-//                url: 'https://api.sygictravelapi.com/1.1/en/places?ids='+pois,
-//                headers: {
-//                    "x-api-key": api_config.key.sygic
-//                }
-//            }
-//        );
-//        details = JSON.parse(details);
+        var group = await getPoiDetailsFromSygic(pois);
 
-        details = dummy_pois;
+        res.json({
+            result: "success",
+            details: group
+        });
+    });
+
+    async function getPoiDetailsFromSygic(poi_str) {
+
+        let details;
+
+        if(sysconfig.sygic) {
+            details = await request.get(
+                {
+                    url: 'https://api.sygictravelapi.com/1.1/en/places?ids='+poi_str,
+                    headers: {
+                        "x-api-key": api_config.key.sygic
+                    }
+                }
+            );
+            details = JSON.parse(details);
+        } else {
+            details = dummy_pois;
+        }
 
         var places = details['data']['places'];
 
@@ -628,15 +649,12 @@ module.exports = (app, db , current) => {
             group[places[i]['id']] = places[i];
         }
 
-        res.json({
-            result: "success",
-            details: group
-        });
-    });
+        return group;
+    }
 
 
     app.post( "/trip-update", async(req, res) => {
-        
+
         var theday = req.body.date;
         var pois = req.body.pois;
         pois = JSON.parse(pois);
@@ -697,11 +715,21 @@ module.exports = (app, db , current) => {
                     ]
         }
          */
-        
+
+        let poi_str = '';
+        for (const p of pois['pois']) {
+            poi_str += 'poi:'+p['poi']+'%7C';
+        }
+
+        var details = await getPoiDetailsFromSygic(poi_str);
+        //details
+
         res.json({
             result: "success",
             theday: theday,
-            schedule: pois
+            pois: pois,
+            poi_str: poi_str,
+            details: details
         });
     });
     
