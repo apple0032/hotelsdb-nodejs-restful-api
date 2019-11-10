@@ -235,15 +235,15 @@ module.exports = (app, db , current) => {
             var fake_pool = dummy_pool;
             //pool = fake_pool;
             pool_total = pool.length;
-            
-            
+
+
             var schedule = [];
             var itinerary_pois = [];
             for (const eachday in dates) {
                 day = dates[eachday].split(",");
                 var theday = day[0]; //Get the exact day
 
-                var itinerary = await getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location);
+                var itinerary = await getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location,"create");
                 itinerary_obj = {};
                 itinerary_obj[theday] = itinerary;
                 schedule.push(itinerary_obj);
@@ -308,7 +308,7 @@ module.exports = (app, db , current) => {
       
     });
 
-    async function getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location){
+    async function getSchedule(pool,theday,start_time,dayend_time,start_coordinate,end_coordinate,start_location,end_location,mode){
 
 
         //Init time object
@@ -397,6 +397,7 @@ module.exports = (app, db , current) => {
 
         var martix_gp = [];  //Non-repeatable identifier array
         var next_poi = 0;
+        var martix_i = 1;
         for (let index = 0; index < new_pool.length-1; index++) {
             //console.log(index);
             if(current_time < dayend_time_obj){
@@ -411,11 +412,29 @@ module.exports = (app, db , current) => {
                     }
                 }
                 var matrix_min = Math.min(...matrix_duration);  //Find the minimum duration time
+                console.log(matrix_duration);
                 for (const k in matrix_ele) {
                     if(matrix_ele[k]['duration']['value'] === matrix_min) {   //Search in loop again, see which element will be next point
-                        next_poi = k;
+                        if(mode === "create"){
+                            next_poi = k
+                        } else {
+                            next_poi = martix_i;
+                        }
                         martix_gp.push(next_poi);
-                        schedule.push({type: "transport", duration: matrix_min, distance: matrix_ele[k]['distance']['value']});  //Push transport json
+
+                        if(mode === "create"){
+                            schedule.push({
+                                type: "transport",
+                                duration: matrix_min,
+                                distance: matrix_ele[k]['distance']['value']
+                            });
+                        } else {
+                            schedule.push({
+                                type: "transport",
+                                duration: matrix_ele[martix_i]['duration']['value'],
+                                distance: matrix_ele[martix_i]['distance']['value']
+                            });
+                        }
 
                         current_time = adjustCurrentTime(current_time, ((matrix_min/60))); //Keep updating current time
                     }
@@ -424,19 +443,23 @@ module.exports = (app, db , current) => {
                 //console.log(next_poi);
                 //console.log(matrix_min);
                 //console.log(martix_gp);
-
+                martix_i++;
 
 
                 //Push the next POI to schedule, keep updating current time
                 //console.log(current_time);
                 seetime = convertDateFormat(current_time);
                 var coordinate = new_pool[next_poi]['location']['lat']+','+new_pool[next_poi]['location']['lng'];
+                let adjust_duration = 0;
+                if(mode === "create"){
+                    adjust_duration = 1800;
+                }
                 schedule.push({
                     type: "poi",
                     poi_id: new_pool[next_poi]['id'],
                     location: new_pool[next_poi]['name'],
                     coordinate: coordinate,
-                    duration: (new_pool[next_poi]['duration']) + 1800,
+                    duration: (new_pool[next_poi]['duration']) + adjust_duration,
                     rating: new_pool[next_poi]['rating'],
                     schedule_time:seetime,
                     perex: new_pool[next_poi]['perex'],
@@ -657,60 +680,47 @@ module.exports = (app, db , current) => {
 
         var theday = req.body.date;
         var pois = req.body.pois;
+        var start_time =  req.body.start_time;
+        var end_time =  req.body.end_time;
         pois = JSON.parse(pois);
         /*
         {
             "pois": [
                         {
                            "poi":"26611751",
-                           "duration" : "1800",
-                           "schedule_time" : "10:00:00"
+                           "duration" : "1800"
                         },
                         {
                            "poi":"19859",
-                           "duration" : "1800",
-                           "schedule_time" : "11:00:00"
+                           "duration" : "1200"
                         },
-
                         {
                            "poi":"59297",
-                           "duration" : "1800",
-                           "schedule_time" : "11:30:00"
+                           "duration" : "1800"
                         },
                         {
                            "poi":"10536422",
-                           "duration" : "1800",
-                           "schedule_time" : "12:30:00"
+                           "duration" : "1800"
                         },
                         {
                            "poi":"50936",
-                           "duration" : "1800",
-                           "schedule_time" : "13:30:00"
+                           "duration" : "1800"
                         },
                         {
                            "poi":"17766238",
-                           "duration" : "1800",
-                           "schedule_time" : "14:00:00"
+                           "duration" : "1800"
                         },
                         {
                            "poi":"5538146",
-                           "duration" : "1800",
-                           "schedule_time" : "14:30:00"
+                           "duration" : "1800"
                         },
                         {
                            "poi":"19925",
-                           "duration" : "1800",
-                           "schedule_time" : "15:00:00"
+                           "duration" : "1800"
                         },
                         {
                            "poi":"25307973",
-                           "duration" : "1800",
-                           "schedule_time" : "16:30:00"
-                        },
-                        {
-                           "poi":"19832",
-                           "duration" : "1800",
-                           "schedule_time" : "18:00:00"
+                           "duration" : "1400"
                         }
                     ]
         }
@@ -723,13 +733,35 @@ module.exports = (app, db , current) => {
 
         var details = await getPoiDetailsFromSygic(poi_str);
         //details
+        // res.json({
+        //     details: details,
+        //     pois: pois
+        // });
+
+        let pool = [];
+        let k = 0;
+        for (const index in details) {
+            details[index]['duration'] = parseInt(pois['pois'][k]['duration']);
+            pool.push(details[index]);
+            k++;
+        }
+
+        var schedule = [];
+        var itinerary = await getSchedule(pool,theday,start_time,end_time,null,null,null,null,"update");
+        itinerary_obj = {};
+        itinerary_obj[theday] = itinerary;
+        schedule.push(itinerary_obj);
 
         res.json({
             result: "success",
             theday: theday,
             pois: pois,
             poi_str: poi_str,
-            details: details
+            number_of_pois: pool.length,
+            dates: [theday],
+            schedule: schedule,
+            details: details,
+            related_flight_id: null
         });
     });
     
