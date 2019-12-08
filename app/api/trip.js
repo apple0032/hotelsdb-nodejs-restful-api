@@ -393,7 +393,7 @@ module.exports = (app, db , current) => {
             //source: new_pool[0]
         });
         current_time = adjustCurrentTime(current_time, (new_pool[0]['duration']/60));
-
+        dayend_time_obj = adjustCurrentTime(dayend_time_obj, -60);
 
         var martix_gp = [];  //Non-repeatable identifier array
         var next_poi = 0;
