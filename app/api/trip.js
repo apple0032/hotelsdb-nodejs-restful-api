@@ -316,6 +316,11 @@ module.exports = (app, db , current) => {
         var dayend_time_obj = new Date(theday+" "+dayend_time);
         var current_time = start_time_obj; //The current time will keep updating start from start_time_obj
         var schedule = [];
+        schedule.push({
+                type : "timeflag",
+                starttime : start_time,
+                endtime : dayend_time
+            });
         seetime = convertDateFormat(current_time);
 
         //Init variables
