@@ -751,8 +751,15 @@ module.exports = (app, db , current) => {
             k++;
         }
 
+        var remain_coordinate = null;
+        var remain_location = null;
+        if(req.body.hotel != null){
+            remain_coordinate = req.body.hotel;
+            remain_location = "hotel";
+        }
+
         var schedule = [];
-        var itinerary = await getSchedule(pool,theday,start_time,end_time,null,null,null,null,"update");
+        var itinerary = await getSchedule(pool,theday,start_time,end_time,remain_coordinate,remain_coordinate,remain_location,remain_location,"update");
         itinerary_obj = {};
         itinerary_obj[theday] = itinerary;
         schedule.push(itinerary_obj);
