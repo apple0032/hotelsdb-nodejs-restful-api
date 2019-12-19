@@ -5,6 +5,7 @@ const dummy_json = require('../../config/dummy.json');
 const dummy_pool = require('../../config/dummy_pool.json');
 const dummy_matrix = require('../../config/dummy_matrix.json');
 const dummy_pois = require('../../config/dummy_pois.json');
+const dummy_search = require('../../config/dummy_search.json');
 const api_config = require("../../config/api_config");
 const sysconfig    = require(__dirname + '/../../config/config.json')['development'];
 
@@ -777,4 +778,51 @@ module.exports = (app, db , current) => {
         });
     });
     
+    app.post( "/trip/search", async(req, res) => {
+        
+        var keyword =  req.body.keyword;
+        var city =  req.body.city;
+        if(typeof keyword == 'undefined'){
+            res.json({
+                result: "error",
+                message: "Sorry, keyword not found."
+            });
+        }
+        if(typeof city == 'undefined'){
+            res.json({
+                result: "error",
+                message: "Sorry, Need city name to match searching"
+            });
+        }
+        
+        if(sysconfig.sygic) {
+           var pois = await request.get(
+               {
+                   url: 'https://api.sygictravelapi.com/1.1/en/places/list?query='+keyword,
+                   headers: {
+                       "x-api-key": api_config.key.sygic
+                   }
+               }
+           );
+            pois = JSON.parse(pois);
+        } else {
+            pois = dummy_search; //hard code dummy json data to speed up development, disable in production
+        }
+        
+        var places = pois['data']['places'];
+        var result = [];
+        for (const i in places) {
+            if(places[i]['level'] == 'poi'){
+                if(places[i]['parent_ids'].includes(city)){
+                    result.push(places[i]);
+                }
+            }
+        }
+        
+        res.json({
+            result: "success",
+            city: city,
+            places: result
+        });
+    });
 };
