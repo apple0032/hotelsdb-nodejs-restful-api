@@ -780,7 +780,7 @@ module.exports = (app, db , current) => {
     
     app.post( "/trip/search", async(req, res) => {
         
-        var keyword =  req.body.keyword;
+        var keyword =  encodeURI(req.body.keyword);
         var city =  req.body.city;
         if(typeof keyword == 'undefined'){
             res.json({
@@ -796,9 +796,10 @@ module.exports = (app, db , current) => {
         }
         
         if(sysconfig.sygic) {
-           var pois = await request.get(
+            var url = 'https://api.sygictravelapi.com/1.1/en/places/list?query='+keyword;
+            var pois = await request.get(
                {
-                   url: 'https://api.sygictravelapi.com/1.1/en/places/list?query='+keyword,
+                   url: url,
                    headers: {
                        "x-api-key": api_config.key.sygic
                    }
@@ -809,12 +810,30 @@ module.exports = (app, db , current) => {
             pois = dummy_search; //hard code dummy json data to speed up development, disable in production
         }
         
+        var country = await db.cities.find({
+            where: {
+               city_id: {
+                 [Op.eq]: city
+               }
+            }
+        });
+        
+        if(country !== null){
+            country = country.country_id;
+        }
+            
         var places = pois['data']['places'];
         var result = [];
         for (const i in places) {
             if(places[i]['level'] == 'poi'){
                 if(places[i]['parent_ids'].includes(city)){
                     result.push(places[i]);
+                } else {
+                    if(country !== null){
+                        if(places[i]['parent_ids'].includes(country)){
+                            result.push(places[i]);
+                        }
+                    }
                 }
             }
         }
@@ -822,6 +841,7 @@ module.exports = (app, db , current) => {
         res.json({
             result: "success",
             city: city,
+            country: country,
             places: result
         });
     });
