@@ -729,8 +729,12 @@ module.exports = (app, db , current) => {
     });
     
     app.put( "/hotel/trip_match/:tripid/:bookid", (req, res) => {
+        var bookid = req.params.bookid;
+        if(bookid == 0){
+            bookid = null;
+        }
         db.trip.update({
-            booking_id: req.params.bookid
+            booking_id: bookid
           },
           {
             where: {
