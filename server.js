@@ -202,8 +202,8 @@ app.get( "/list", async (req, res) => {
     
     res.send({
         result: 'success',
-        endpoints: endpoints,
-        total: endpoints.length
+        total: endpoints.length,
+        endpoints: endpoints
     });
     
   }
