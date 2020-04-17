@@ -3767,10 +3767,6 @@
 ],
     "tags": [
     {
-        "description": "Admin manages user's actions",
-        "name": "admin-user"
-    },
-    {
         "description": "User manages their account information",
         "name": "account"
     },
@@ -3785,6 +3781,10 @@
     {
         "description": "Searching API",
         "name": "search"
+    },
+    {
+        "description": "Admin manages user's actions",
+        "name": "admin-user"
     },
     {
         "description": "Admin manages hotel information",

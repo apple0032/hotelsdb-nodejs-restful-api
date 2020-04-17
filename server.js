@@ -24,6 +24,29 @@ const listEndpoints = require('express-list-endpoints');
 //const current = dateTime.create().format('Y-m-d H:M:S');
 //console.log(current.create().format('Y-m-d H:M:S'));
 
+//Swagger widget
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUI = require('swagger-ui-express');
+
+const options = {
+  swaggerDefinition : {
+      info :{
+          title: "test",
+          description: "test",
+          contact:{
+              name: "KEN"
+          },
+          servers: ["tttttt"]
+      }
+  },
+  apis: ["server.js"]
+};
+
+const swaggerDocs = swaggerJsDoc(options);
+app.use("/api-docs",swaggerUI.serve, swaggerUI.setup(swaggerDocs));
+
+
+
 //API authentication before all request
 app.all('/*', function(req, res, next) {
     console.log('Intercepting requests ...');
@@ -268,3 +291,19 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  * 
  * 
  */
+
+
+
+
+//************** Swagger YAML format structure **************//
+
+/**
+* @swagger
+* /test:
+*  get:
+*    description: TESTING
+*    responses:
+*      '200':
+*        description: TTTTESTING...
+*
+*/
