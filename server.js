@@ -30,16 +30,37 @@ const swaggerUI = require('swagger-ui-express');
 
 const options = {
   swaggerDefinition : {
-      info :{
-          title: "test",
-          description: "test",
-          contact:{
-              name: "KEN"
-          },
-          servers: ["tttttt"]
-      }
+        info :{
+            title: "HotelsDB API Documentation",
+            version: "1.1.0",
+            description: "This is HotelsDB API Documentation. \n\n# Introduction\nThis API is documented in **Swagger format** and is based on HotelsDB website content provided by **Hotelsdb development team.** \n Currently, HotelsDB API is not released for public use. It only provides API specification for developer to read and test. \n For internal use, `API-KEY` header is required for authentication. Error message will display without the key. For more information, please contact out Chief Software Engineer - **Ken Ip** by email. \n \n# Copyright\n© 2020 Apple0032 | KenIp , All Rights Reserved",
+            contact:{
+                name: "KENIP",
+                email: "kenip0813@gmail.com"
+            }
+        },
+        securityDefinitions:{
+          APIKeyHeader: {
+              type: "apiKey",
+              in: "header",
+              name: "api_key"
+          }
+        },
+        schemes: ["http"],
+        consumes: [
+            "application/x-www-form-urlencoded",
+        ],
+        produces: [
+            "application/json"
+        ],
+        tags: [
+            {
+                description: " - Hotel client side APIs",
+                name: "hotel"
+            }
+        ]
   },
-  apis: ["server.js"]
+  apis: ["swagger.js"]
 };
 
 const swaggerDocs = swaggerJsDoc(options);
@@ -291,19 +312,3 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  * 
  * 
  */
-
-
-
-
-//************** Swagger YAML format structure **************//
-
-/**
-* @swagger
-* /test:
-*  get:
-*    description: TESTING
-*    responses:
-*      '200':
-*        description: TTTTESTING...
-*
-*/

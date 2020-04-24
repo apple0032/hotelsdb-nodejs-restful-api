@@ -34,7 +34,10 @@ module.exports = (app, db , current) => {
   app.get( "/hotel/:hotel_id", (req, res) => {
        db.hotel.findById(req.params.hotel_id).then( (result) => {
            if(result !== null){
-              res.json(result);
+                res.json({ 
+                    result: 'success' , 
+                    data: result 
+                });
            } else {
               res.json({ result: 'error', message: 'No data found.' });
            }
@@ -107,6 +110,7 @@ module.exports = (app, db , current) => {
            if(result != ''){
               res.json({ 
                   result: 'success',
+                  hotel_id : req.params.hotel_id,
                   data: result 
               });
            } else {
@@ -127,10 +131,10 @@ module.exports = (app, db , current) => {
     
     if(typeof req.body.offset !== 'undefined'){
         criteria.offset = parseInt(req.body.offset); 
-    }
+    } else { criteria.offset = 0; }
     if(typeof req.body.limit !== 'undefined'){
         criteria.limit = parseInt(req.body.limit); 
-    }
+    } else { criteria.limit = 30; }
     
 //    const criteria = { 
 //        offset:0,
@@ -150,7 +154,7 @@ module.exports = (app, db , current) => {
     
     if(typeof req.body.category_id !== 'undefined'){
         query.category_id = {
-            [Op.eq]: req.body.category_id
+            [Op.in]: req.body.category_id.split(",")
         };
     }
     
@@ -189,7 +193,7 @@ module.exports = (app, db , current) => {
         const subCriteria_2 = {};//define a empty where object
 
         if(typeof req.body.tag_id !== 'undefined'){
-            subCriteria_2.id =  req.body.tag_id;
+            subCriteria_2.id =  {  [Op.in]: req.body.tag_id.split(",") };
             include_2.where = subCriteria_2;
         }
         
