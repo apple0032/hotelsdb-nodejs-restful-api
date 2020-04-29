@@ -57,10 +57,24 @@ const options = {
             {
                 description: " - Hotel client side APIs",
                 name: "hotel"
+            },
+            {
+                description: " - Flight client side APIs",
+                name: "flight"
+            },
+            {
+                description: " - Accounts client side APIs",
+                name: "account"
             }
         ]
   },
-  apis: ["swagger.js"]
+  apis: [
+      "app/api/hotel.js",
+      "app/api/flight.js",
+      "app/api/trip.js",
+      "app/api/users.js",
+      "app/api/account.js"
+  ]
 };
 
 const swaggerDocs = swaggerJsDoc(options);
@@ -95,7 +109,7 @@ function ApiKeyChecking(req, res, next){
     ];
     var ExceptResult = exception.includes(ApiRequest);
     
-    if(ExceptResult == false){
+    if(ExceptResult == true){
         if((!(req.header('api_key')))){
             res.json({ result: 'error', message: 'Missing api_key' });
         } else {

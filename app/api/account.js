@@ -37,6 +37,49 @@ module.exports = (app, db , current) => {
                 
   });
   
+   /**
+   * @swagger
+   
+   "/account/login": {
+        "post": {
+            "security": [
+                {
+                    "APIKeyHeader": []
+                }
+            ],
+            "summary": "login check of a user by email & password",
+            "description": "login check of a user by email & password",
+            "tags" : ["account"],
+            "parameters": [
+                {
+                    "description": "email of user",
+                    "type": "string",
+                    "name": "email",
+                    "in": "formData",
+                    "required" : "true"
+                },
+                {
+                    "description": "password of user",
+                    "type": "string",
+                    "name": "password",
+                    "in": "formData",
+                    "required" : "true"
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Success output",
+                    "examples" : {
+                        "application/json": {
+                            
+                        }
+                    }
+                }
+            }
+        }
+    }
+   */
+  
   //Generate new api_key by user_id
   app.put( "/account/api-key/:user_id", (req, res) => {
        db.users.findById(req.params.user_id).then( (result) => {
