@@ -109,7 +109,7 @@ function ApiKeyChecking(req, res, next){
     ];
     var ExceptResult = exception.includes(ApiRequest);
     
-    if(ExceptResult == true){
+    if(ExceptResult == false){
         if((!(req.header('api_key')))){
             res.json({ result: 'error', message: 'Missing api_key' });
         } else {
