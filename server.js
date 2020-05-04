@@ -7,7 +7,7 @@ const db = require("./models");
 const request = require('request');
 
 const apiIndex = require("./app/api/index");
-const apiUsers = require("./app/api/users");
+const apiUsers = require("./app/api/admin/users");
 const apiHotel = require("./app/api/hotel");
 const apiFlight = require("./app/api/flight");
 const apiAccount = require("./app/api/account");
@@ -63,8 +63,12 @@ const options = {
                 name: "flight"
             },
             {
-                description: " - Accounts client side APIs",
-                name: "account"
+                description: " - User client side APIs",
+                name: "user"
+            },
+            {
+                description: " - User Admin Management APIs",
+                name: "admin-user"
             }
         ]
   },
@@ -72,8 +76,8 @@ const options = {
       "app/api/hotel.js",
       "app/api/flight.js",
       "app/api/trip.js",
-      "app/api/users.js",
-      "app/api/account.js"
+      "app/api/account.js",
+      "app/api/admin/users.js"
   ]
 };
 

@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 module.exports = (app, db , current) => {
   
   //Login user
-  app.post( "/account/login", (req, res) => {
+  app.post( "/user/login", (req, res) => {
 
     var required_fields = [req.body.email, req.body.password];
     var validator = ApiFieldsValidation(required_fields);
@@ -40,7 +40,7 @@ module.exports = (app, db , current) => {
    /**
    * @swagger
    
-   "/account/login": {
+   "/user/login": {
         "post": {
             "security": [
                 {
@@ -49,7 +49,7 @@ module.exports = (app, db , current) => {
             ],
             "summary": "login check of a user by email & password",
             "description": "login check of a user by email & password",
-            "tags" : ["account"],
+            "tags" : ["user"],
             "parameters": [
                 {
                     "description": "email of user",
@@ -71,7 +71,10 @@ module.exports = (app, db , current) => {
                     "description": "Success output",
                     "examples" : {
                         "application/json": {
-                            
+                            "result": "success",
+                            "name": "KenIP",
+                            "email": "kenip0813@gmail.com",
+                            "message": "Login successful"
                         }
                     }
                 }
@@ -81,7 +84,7 @@ module.exports = (app, db , current) => {
    */
   
   //Generate new api_key by user_id
-  app.put( "/account/api-key/:user_id", (req, res) => {
+  app.put( "/user/api-key/:user_id", (req, res) => {
        db.users.findById(req.params.user_id).then( (result) => {
            if(result !== null){
               //User found, generate and update new api key
@@ -108,16 +111,69 @@ module.exports = (app, db , current) => {
        });
   });
   
+   /**
+   * @swagger
+   
+   "/user/api-key/{user_id}": {
+        "put": {
+            "security": [
+                {
+                    "APIKeyHeader": []
+                }
+            ],
+            "summary": "Generate a new api_key for a user",
+            "description": "Generate a new api_key for a user, It will replace the old api_key.",
+            "tags" : ["user"],
+            "parameters": [
+                {
+                    "description": "id of user",
+                    "type": "string",
+                    "name": "user_id",
+                    "in": "path",
+                    "required" : "true"
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Success output",
+                    "examples" : {
+                        "application/json": {
+                            "result": "success",
+                            "updated": {
+                              "id": 3,
+                              "name": "user01",
+                              "email": "user01@email.com",
+                              "phone": null,
+                              "gender": null,
+                              "role": "user",
+                              "profile_image": null,
+                              "profile_banner": null,
+                              "profile_desc": null,
+                              "password": "$2y$10$XxsK4QEmY6FdtJZVjo7lt.iFClmphVmSQkN7uhVdMWEgumenRx88C",
+                              "api_key": "MjAyMC0wNS0wNCAxNjoyNjozOQ==",
+                              "created_at": "2018-10-29 09:27:08",
+                              "updated_at": "2020-05-04 16:26:39"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+   */
+  
+  
+  
   //Get user by user_id (user api)
-  app.get( "/account/:user_id", (req, res) => {
+  app.get( "/user/:user_id", (req, res) => {
        db.users.find( {
            where: {id: req.params.user_id} , 
              attributes: {
-                exclude: ['password','api_key']
+                exclude: ['password']
               }
        }).then( (result) => {
            if(result !== null){
-              res.json(result);
+              res.json({ result: 'success', data: result });
            } else {
               res.json({ result: 'error', message: 'No data found.' });
            }
@@ -128,8 +184,60 @@ module.exports = (app, db , current) => {
   );
   
   
+  
+   /**
+   * @swagger
+   
+   "/user/{user_id}": {
+        "get": {
+            "security": [
+                {
+                    "APIKeyHeader": []
+                }
+            ],
+            "summary": "Get user details by id",
+            "description": "Get user details by id",
+            "tags" : ["user"],
+            "parameters": [
+                {
+                    "description": "id of user",
+                    "type": "string",
+                    "name": "user_id",
+                    "in": "path",
+                    "required" : "true"
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Success output",
+                    "examples" : {
+                        "application/json": {
+                            "result": "success",
+                            "data": {
+                              "id": 3,
+                              "name": "user01",
+                              "email": "user01@email.com",
+                              "phone": null,
+                              "gender": null,
+                              "role": "user",
+                              "profile_image": null,
+                              "profile_banner": null,
+                              "profile_desc": null,
+                              "api_key": "MjAyMC0wNS0wNCAxNjozMjozNw==",
+                              "created_at": "2018-10-29 09:27:08",
+                              "updated_at": "2020-05-04 16:32:37"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+   */
+  
+  
    //Update user details
-  app.put( "/account/:user_id", (req, res) => {
+  app.put( "/user/:user_id", (req, res) => {
 //      console.log(req.params.user_id);
 //      console.log(req.body);
     var apiRequired = {
@@ -162,9 +270,117 @@ module.exports = (app, db , current) => {
     });
   });
   
+
+  
+   /**
+   * @swagger
+   
+   "/user/{user_id}": {
+        "put": {
+            "security": [
+                {
+                    "APIKeyHeader": []
+                }
+            ],
+            "summary": "Update user details by id",
+            "description": "Update user details by id",
+            "tags" : ["user"],
+            "parameters": [
+                {
+                    "description": "id of user",
+                    "type": "string",
+                    "name": "user_id",
+                    "in": "path",
+                    "required" : "true"
+                },
+                {
+                    "description": "name of user",
+                    "type": "string",
+                    "name": "name",
+                    "in": "formData"
+                },
+                {
+                    "description": "email of user",
+                    "type": "string",
+                    "name": "email",
+                    "in": "formData"
+                },
+                {
+                    "description": "phone of user",
+                    "type": "string",
+                    "name": "phone",
+                    "in": "formData"
+                },
+                {
+                    "description": "gender of user",
+                    "type": "string",
+                    "name": "gender",
+                    "in": "formData"
+                },
+                {
+                    "description": "role of user",
+                    "type": "string",
+                    "name": "role",
+                    "in": "formData"
+                },
+                {
+                    "description": "profile_image of user",
+                    "type": "string",
+                    "name": "profile_image",
+                    "in": "formData"
+                },
+                {
+                    "description": "profile_banner of user",
+                    "type": "string",
+                    "name": "profile_banner",
+                    "in": "formData"
+                },
+                {
+                    "description": "profile_desc of user",
+                    "type": "string",
+                    "name": "profile_desc",
+                    "in": "formData"
+                },
+                {
+                    "description": "password of user",
+                    "type": "string",
+                    "name": "password",
+                    "in": "formData"
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Success output",
+                    "examples" : {
+                        "application/json": {
+                            "result": "success",
+                            "updated": {
+                              "id": 3,
+                              "name": "kenjai",
+                              "email": "user02@email.com",
+                              "phone": null,
+                              "gender": null,
+                              "role": "user",
+                              "profile_image": null,
+                              "profile_banner": null,
+                              "profile_desc": null,
+                              "password": "$2y$10$XxsK4QEmY6FdtJZVjo7lt.iFClmphVmSQkN7uhVdMWEgumenRx88C",
+                              "api_key": "MjAyMC0wNS0wNCAxNjozMjozNw==",
+                              "created_at": "2018-10-29 09:27:08",
+                              "updated_at": "2020-05-04 16:58:05"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+   */
+  
+  
   
   //Create new user
-  app.post( "/account/create", (req, res) => {
+  app.post( "/user", (req, res) => {
     console.log(req.body);
     var required_fields = [req.body.name, req.body.email, req.body.password];
     var validator = ApiFieldsValidation(required_fields);
@@ -204,6 +420,104 @@ module.exports = (app, db , current) => {
     }
   });
 
+
+
+   /**
+   * @swagger
+   
+   "/user": {
+        "post": {
+            "security": [
+                {
+                    "APIKeyHeader": []
+                }
+            ],
+            "summary": "Create a new user",
+            "description": "Create a new user",
+            "tags" : ["user"],
+            "parameters": [
+                {
+                    "description": "name of user",
+                    "type": "string",
+                    "name": "name",
+                    "in": "formData",
+                    "required" : "true"
+                },
+                {
+                    "description": "email of user",
+                    "type": "string",
+                    "name": "email",
+                    "in": "formData",
+                    "required" : "true"
+                },
+                {
+                    "description": "password of user",
+                    "type": "string",
+                    "name": "password",
+                    "in": "formData",
+                    "required" : "true"
+                },
+                {
+                    "description": "phone of user",
+                    "type": "string",
+                    "name": "phone",
+                    "in": "formData"
+                },
+                {
+                    "description": "gender of user",
+                    "type": "string",
+                    "name": "gender",
+                    "in": "formData"
+                },
+                {
+                    "description": "role of user",
+                    "type": "string",
+                    "name": "role",
+                    "in": "formData"
+                },
+                {
+                    "description": "profile_image of user",
+                    "type": "string",
+                    "name": "profile_image",
+                    "in": "formData"
+                },
+                {
+                    "description": "profile_banner of user",
+                    "type": "string",
+                    "name": "profile_banner",
+                    "in": "formData"
+                },
+                {
+                    "description": "profile_desc of user",
+                    "type": "string",
+                    "name": "profile_desc",
+                    "in": "formData"
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Success output",
+                    "examples" : {
+                        "application/json": {
+                            "result": "success",
+                            "created": {
+                              "id": 105,
+                              "name": "test",
+                              "email": "testtest@gmail.com",
+                              "password": "$2a$10$.wH91CNBiHAc7Gh2hw7jzO8dkKPJMjwSLxlZPBBgpyjgNhqq8zb9O",
+                              "phone": "67578444",
+                              "created_at": "2020-05-04 17:06:41",
+                              "updated_at": "2020-05-04 17:06:41"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+   */
+  
+  
   
   function ApiFieldsValidation(params){
       
