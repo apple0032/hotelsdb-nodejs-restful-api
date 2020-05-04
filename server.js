@@ -67,12 +67,17 @@ const options = {
                 name: "user"
             },
             {
+                description: " - Trip client side APIs",
+                name: "trip"
+            },
+            {
                 description: " - User Admin Management APIs",
                 name: "admin-user"
             }
         ]
   },
   apis: [
+      "server.js",
       "app/api/hotel.js",
       "app/api/flight.js",
       "app/api/trip.js",
@@ -330,3 +335,118 @@ app.listen(8080, () => console.log("App listening on port 8080!"));
  * 
  * 
  */
+
+
+    
+    
+    /**
+     * @swagger
+    
+    "/trip": {
+        "post": {
+            "security": [
+                {
+                    "APIKeyHeader": []
+                }
+            ],
+            "summary": "Generate new itinerary JSON string",
+            "description": "Generate new itinerary JSON string",
+            "tags" : ["trip"],
+            "parameters": [
+                {
+                    "description": "city name",
+                    "type": "string",
+                    "name": "city",
+                    "in": "formData",
+                    "required" : true
+                },
+                {
+                    "description": "Trip start date",
+                    "type": "string",
+                    "name": "trip_start",
+                    "in": "formData",
+                    "required" : true
+                },
+                {
+                    "description": "Trip end date",
+                    "type": "string",
+                    "name": "trip_end",
+                    "in": "formData",
+                    "required" : true
+                },
+                {
+                    "description": "Priority JSON string",
+                    "type": "string",
+                    "name": "priority",
+                    "in": "formData",
+                    "required" : true
+                },
+                {
+                    "description": "limit number",
+                    "type": "integer",
+                    "name": "limit",
+                    "in": "formData"
+                },
+                {
+                    "description": "Hot attraction flag",
+                    "type": "integer",
+                    "name": "hottest",
+                    "in": "formData"
+                },
+                {
+                    "description": "Trip Start Time",
+                    "type": "string",
+                    "name": "start_time",
+                    "in": "formData"
+                },
+                {
+                    "description": "Trip End Time",
+                    "type": "string",
+                    "name": "dayend_time",
+                    "in": "formData"
+                },
+                {
+                    "description": "start coordination",
+                    "type": "string",
+                    "name": "start_point",
+                    "in": "formData"
+                },
+                {
+                    "description": "end coordination",
+                    "type": "string",
+                    "name": "end_point",
+                    "in": "formData"
+                },
+                {
+                    "description": "start location string such as HOTEL",
+                    "type": "string",
+                    "name": "start_location",
+                    "in": "formData"
+                },
+                {
+                    "description": "end location string such as HOTEL",
+                    "type": "string",
+                    "name": "end_location",
+                    "in": "formData"
+                },
+                {
+                    "description": "related flight id",
+                    "type": "string",
+                    "name": "related_flight_id",
+                    "in": "formData"
+                }
+            ],
+            "responses": {
+                "EXAMPLE": {
+                    "description": "",
+                    "examples" : {
+                        "application/json": {
+                            
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    */
